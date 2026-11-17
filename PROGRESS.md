@@ -33,11 +33,11 @@ Tagline: *"Kitaabein behti rahein."*
 ## Status
 - [x] Name chosen: BookDhara
 - [x] GitHub org + repo created, connected to Claude
-- [ ] Screen designs
+- [x] Screen designs v1 (Home, Book detail, Checkout, Pickup code, List a book, Wallet): https://claude.ai/artifact/LWq8k5YwGrrTtWGFhhCCc7
 - [ ] Database + API design
 - [ ] Project setup (Spring Boot backend, frontend)
 - [ ] Hosting connected (Vercel / Render / Neon)
 - [ ] Feature: login
 
 ## Next step
-Finish screen designs, then database and API design.
+Get Akanksha's feedback on the screens, then database and API design.
