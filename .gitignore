@@ -1,0 +1,16 @@
+# Gradle / Java
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+*.log
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Local secrets
+.env
+*.env.local

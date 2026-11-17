@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:bookdhara;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+bookdhara:
+  jwt:
+    secret: test-secret-test-secret-test-secret-123
+    ttl: P30D
+  otp:
+    length: 6
+    ttl: PT5M
+    max-attempts: 5
+    max-requests-per-window: 3
+    request-window: PT10M
+    expose-in-response: true
+  cors:
+    allowed-origins: http://localhost:3000
