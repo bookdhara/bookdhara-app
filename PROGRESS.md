@@ -35,9 +35,19 @@ Tagline: *"Kitaabein behti rahein."*
 - [x] GitHub org + repo created, connected to Claude
 - [x] Screen designs v1 (Home, Book detail, Checkout, Pickup code, List a book, Wallet): https://claude.ai/artifact/LWq8k5YwGrrTtWGFhhCCc7
 - [ ] Database + API design
-- [ ] Project setup (Spring Boot backend, frontend)
+- [x] Backend setup: Spring Boot 3.5, Java 21, Gradle, Flyway, Dockerfile, GitHub Actions CI (green)
+- [ ] Frontend setup (Flutter: web + Android)
 - [ ] Hosting connected (Vercel / Render / Neon)
-- [ ] Feature: login
+- [x] Feature: phone OTP login (backend)
+  - `POST /api/auth/otp/request` {phone} -> sends OTP (returns `devCode` while no SMS provider)
+  - `POST /api/auth/otp/verify` {phone, otp} -> JWT + user + `needsProfile`
+  - `GET /api/me`, `PATCH /api/me` {name} (Bearer token)
+  - SMS provider not chosen yet (`SmsSender` interface; `LoggingSmsSender` placeholder)
+- [ ] Feature: login screens (frontend)
 
 ## Next step
-Get Akanksha's feedback on the screens, then database and API design.
+Deploy backend (Neon DB + Render), then Flutter app with login screens.
+
+## Build notes
+- The cloud session cannot download Maven/npm packages, so GitHub Actions is the build and test loop: push, then `gh run list -R bookdhara/bookdhara-app`.
+- Env vars for the backend: `DB_URL` (jdbc:postgresql://...), `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` (32+ chars), `CORS_ALLOWED_ORIGINS`, `OTP_EXPOSE_IN_RESPONSE`.
