@@ -12,6 +12,8 @@ Tagline: *"Kitaabein behti rahein."*
 - **Backend:** Java + Spring Boot. **Database:** PostgreSQL.
 - **Hosting (free tiers):** Vercel (frontend), Render (backend), Neon (Postgres).
 - **Workflow:** Claude writes code in the cloud and pushes to GitHub; hosting auto-deploys on push.
+  - Until the first deploy: push directly to `main`.
+  - After the first deploy: every change goes through a branch + Pull Request, and Akanksha merges.
 - **Money:**
   - Buyer pays: book price + shipping + platform fee.
   - Credits (1 credit = ₹1) can pay only for the book price. Shipping and fee are always cash.
