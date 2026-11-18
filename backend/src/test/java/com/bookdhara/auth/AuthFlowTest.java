@@ -132,6 +132,17 @@ class AuthFlowTest {
         mvc.perform(get("/actuator/health")).andExpect(status().isOk());
     }
 
+    @Test
+    void statusPageIsPlainJsonForBrowsers() throws Exception {
+        for (String path : new String[]{"/", "/api/status"}) {
+            mvc.perform(get(path).accept(MediaType.TEXT_HTML, MediaType.ALL))
+                    .andExpect(status().isOk())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                            .content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.status").value("UP"));
+        }
+    }
+
     private String requestOtp(String phone) throws Exception {
         String body = mvc.perform(post("/api/auth/otp/request")
                         .contentType(MediaType.APPLICATION_JSON)
