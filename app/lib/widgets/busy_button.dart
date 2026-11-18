@@ -58,7 +58,7 @@ class _BusyButtonState extends State<BusyButton> {
         if (_slow) ...[
           const SizedBox(height: 10),
           const Text(
-            'Waking up the server. The first try can take up to a minute.',
+            'Waking up the server. The first try can take up to a minute, please wait.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: AppColors.muted),
           ),

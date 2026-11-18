@@ -25,8 +25,11 @@ class ApiClient {
   final http.Client _http;
   final String baseUrl;
 
-  /// The free server can take up to a minute to wake up, so allow a long wait.
-  static const _timeout = Duration(seconds: 90);
+  /// The free server can take up to a minute to wake up. While it wakes, Render answers with its own
+  /// loading page, which the browser reports as a network error, so we keep retrying for a while.
+  static const _attemptTimeout = Duration(seconds: 45);
+  static const _wakeUpWindow = Duration(seconds: 100);
+  static const _retryDelay = Duration(seconds: 4);
 
   String? token;
 
@@ -46,33 +49,50 @@ class ApiClient {
   /// Full address for a path the backend returns, such as a photo url.
   String url(String path) => '$baseUrl$path';
 
+  /// Pings the server so a sleeping free server starts waking up. Errors are ignored.
+  Future<void> wakeUp() async {
+    try {
+      await _execute(() => http.Request('GET', Uri.parse('$baseUrl/api/status')));
+    } catch (_) {
+      // Best effort only.
+    }
+  }
+
   Future<Map<String, dynamic>> uploadFile(String path, List<int> bytes, String filename, String contentType) {
-    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'))
+    return _execute(() => http.MultipartRequest('POST', Uri.parse('$baseUrl$path'))
       ..files.add(http.MultipartFile.fromBytes('file', bytes,
-          filename: filename, contentType: MediaType.parse(contentType)));
-    return _execute(request);
+          filename: filename, contentType: MediaType.parse(contentType))));
   }
 
   Future<Map<String, dynamic>> _send(String method, String path, [Map<String, dynamic>? body]) {
-    final request = http.Request(method, Uri.parse('$baseUrl$path'));
-    if (body != null) {
-      request.headers['Content-Type'] = 'application/json';
-      request.body = jsonEncode(body);
-    }
-    return _execute(request);
+    return _execute(() {
+      final request = http.Request(method, Uri.parse('$baseUrl$path'));
+      if (body != null) {
+        request.headers['Content-Type'] = 'application/json';
+        request.body = jsonEncode(body);
+      }
+      return request;
+    });
   }
 
-  Future<Map<String, dynamic>> _execute(http.BaseRequest request) async {
-    request.headers['Accept'] = 'application/json';
-    if (token != null) {
-      request.headers['Authorization'] = 'Bearer $token';
-    }
-
-    final http.Response response;
-    try {
-      response = await http.Response.fromStream(await _http.send(request).timeout(_timeout));
-    } catch (_) {
-      throw ApiException(0, 'NETWORK', 'Could not reach BookDhara. Check your internet and try again.');
+  /// Sends a request (built fresh for every try) and retries network errors while the server wakes up.
+  Future<Map<String, dynamic>> _execute(http.BaseRequest Function() build) async {
+    final deadline = DateTime.now().add(_wakeUpWindow);
+    http.Response? response;
+    while (response == null) {
+      final request = build();
+      request.headers['Accept'] = 'application/json';
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      try {
+        response = await http.Response.fromStream(await _http.send(request).timeout(_attemptTimeout));
+      } catch (_) {
+        if (DateTime.now().add(_retryDelay).isAfter(deadline)) {
+          throw ApiException(0, 'NETWORK', 'Could not reach BookDhara. Check your internet and try again.');
+        }
+        await Future<void>.delayed(_retryDelay);
+      }
     }
 
     final decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
