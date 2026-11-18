@@ -5,7 +5,7 @@ import 'auth/auth_store.dart';
 import 'books/books_api.dart';
 import 'screens/home_screen.dart';
 import 'screens/name_screen.dart';
-import 'screens/phone_screen.dart';
+import 'screens/login_screen.dart';
 import 'theme.dart';
 
 void main() {
@@ -33,7 +33,7 @@ class BookDharaApp extends StatelessWidget {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
           if (!auth.isLoggedIn) {
-            return PhoneScreen(auth: auth);
+            return LoginScreen(auth: auth);
           }
           if (auth.user!.needsProfile) {
             return NameScreen(auth: auth);

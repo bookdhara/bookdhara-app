@@ -36,8 +36,13 @@ bookdhara:
     max-attempts: 5
     max-requests-per-window: 3
     request-window: PT10M
-    # Shows the OTP in the API response so we can test without an SMS provider.
-    # Must be false once a real SMS provider is connected.
+    # Test mode only: shows the code in the app while no email service is connected.
+    # Ignored (never shown) once Brevo is configured.
     expose-in-response: ${OTP_EXPOSE_IN_RESPONSE:true}
+  email:
+    # Set BREVO_API_KEY (and BREVO_SENDER_EMAIL) on Render to send real emails. Empty = test mode.
+    brevo-api-key: ${BREVO_API_KEY:}
+    sender-email: ${BREVO_SENDER_EMAIL:bookdhara.in@gmail.com}
+    sender-name: BookDhara
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:https://bookdhara.github.io,http://localhost:3000,http://localhost:8081}

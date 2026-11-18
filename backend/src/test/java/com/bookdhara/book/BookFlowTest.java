@@ -57,8 +57,8 @@ class BookFlowTest {
         jdbc.update("DELETE FROM books");
         jdbc.update("DELETE FROM otp_codes");
         jdbc.update("DELETE FROM users");
-        seller = TestLogin.login(mvc, json, "9876500001", "Riya");
-        buyer = TestLogin.login(mvc, json, "9876500002", "Aman");
+        seller = TestLogin.login(mvc, json, "riya@example.com", "Riya");
+        buyer = TestLogin.login(mvc, json, "aman@example.com", "Aman");
     }
 
     @Test

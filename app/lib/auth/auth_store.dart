@@ -4,27 +4,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
 
 class AppUser {
-  AppUser({required this.id, required this.phone, this.name});
+  AppUser({required this.id, this.email, this.phone, this.name});
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: (json['id'] as num).toInt(),
-        phone: json['phone'] as String,
+        email: json['email'] as String?,
+        phone: json['phone'] as String?,
         name: json['name'] as String?,
       );
 
   final int id;
-  final String phone;
+  final String? email;
+  final String? phone;
   final String? name;
 
   bool get needsProfile => name == null || name!.trim().isEmpty;
 }
 
 class OtpSent {
-  OtpSent({required this.phone, this.devCode});
+  OtpSent({required this.email, this.devCode});
 
-  final String phone;
+  final String email;
 
-  /// Filled only while the backend has no SMS provider (test mode).
+  /// Filled only while the backend has no email service connected (test mode).
   final String? devCode;
 }
 
@@ -58,13 +60,13 @@ class AuthStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<OtpSent> requestOtp(String phone) async {
-    final data = await api.post('/api/auth/otp/request', {'phone': phone});
-    return OtpSent(phone: data['phone'] as String, devCode: data['devCode'] as String?);
+  Future<OtpSent> requestOtp(String email) async {
+    final data = await api.post('/api/auth/otp/request', {'email': email.trim()});
+    return OtpSent(email: data['email'] as String, devCode: data['devCode'] as String?);
   }
 
-  Future<void> verifyOtp(String phone, String otp) async {
-    final data = await api.post('/api/auth/otp/verify', {'phone': phone, 'otp': otp});
+  Future<void> verifyOtp(String email, String otp) async {
+    final data = await api.post('/api/auth/otp/verify', {'email': email, 'otp': otp});
     final token = data['accessToken'] as String;
     api.token = token;
     final prefs = await SharedPreferences.getInstance();

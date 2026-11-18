@@ -17,7 +17,11 @@ public class OtpCode {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 13)
+    @Column(length = 254)
+    private String email;
+
+    /** Old phone-login codes only. */
+    @Column(length = 13)
     private String phone;
 
     @Column(name = "code_hash", nullable = false, length = 100)
@@ -39,8 +43,8 @@ public class OtpCode {
         // for JPA
     }
 
-    public OtpCode(String phone, String codeHash, Instant createdAt, Instant expiresAt) {
-        this.phone = phone;
+    public OtpCode(String email, String codeHash, Instant createdAt, Instant expiresAt) {
+        this.email = email;
         this.codeHash = codeHash;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
@@ -58,8 +62,8 @@ public class OtpCode {
         used = true;
     }
 
-    public String getPhone() {
-        return phone;
+    public String getEmail() {
+        return email;
     }
 
     public String getCodeHash() {

@@ -21,5 +21,9 @@ bookdhara:
     max-requests-per-window: 3
     request-window: PT10M
     expose-in-response: true
+  email:
+    brevo-api-key: ""
+    sender-email: test@example.com
+    sender-name: BookDhara
   cors:
     allowed-origins: http://localhost:3000
