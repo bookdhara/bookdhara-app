@@ -1,0 +1,50 @@
+name: Live API smoke test
+
+# Run by hand (Actions tab > "Live API smoke test" > Run workflow) to check the deployed backend.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Backend URL"
+        default: "https://bookdhara-app.onrender.com"
+        required: true
+      phone:
+        description: "Test phone number (a test account is created for it)"
+        default: "9999900001"
+        required: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      BASE: ${{ inputs.base_url }}
+      PHONE: ${{ inputs.phone }}
+    steps:
+      - name: Health check (waits for a sleeping free server to wake up)
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 30 "$BASE/actuator/health"; then echo; exit 0; fi
+            echo "Not up yet, retrying in 10s ($i/12)"; sleep 10
+          done
+          exit 1
+
+      - name: Request OTP
+        run: |
+          RESP=$(curl -fsS -X POST "$BASE/api/auth/otp/request" \
+            -H 'Content-Type: application/json' -d "{\"phone\":\"$PHONE\"}")
+          echo "$RESP" | jq '{phone, expiresInSeconds, devCodePresent: (.devCode != null)}'
+          echo "OTP=$(echo "$RESP" | jq -r .devCode)" >> "$GITHUB_ENV"
+
+      - name: Verify OTP and call /api/me
+        run: |
+          RESP=$(curl -fsS -X POST "$BASE/api/auth/otp/verify" \
+            -H 'Content-Type: application/json' -d "{\"phone\":\"$PHONE\",\"otp\":\"$OTP\"}")
+          echo "$RESP" | jq '{needsProfile, user}'
+          TOKEN=$(echo "$RESP" | jq -r .accessToken)
+          curl -fsS "$BASE/api/me" -H "Authorization: Bearer $TOKEN" | jq .
+
+      - name: Unauthenticated request is refused
+        run: |
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/me")
+          echo "GET /api/me without token -> $CODE"
+          test "$CODE" = "401"
