@@ -36,4 +36,4 @@ bookdhara:
     # Must be false once a real SMS provider is connected.
     expose-in-response: ${OTP_EXPOSE_IN_RESPONSE:true}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://bookdhara.github.io,http://localhost:3000,http://localhost:8081}

@@ -14,3 +14,9 @@ build/
 # Local secrets
 .env
 *.env.local
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+app/.metadata

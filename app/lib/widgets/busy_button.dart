@@ -1,0 +1,69 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../theme.dart';
+
+/// A main action button that shows a spinner while busy. If the wait passes a few seconds,
+/// it explains that the free server may be waking up.
+class BusyButton extends StatefulWidget {
+  const BusyButton({super.key, required this.label, required this.busy, required this.onPressed});
+
+  final String label;
+  final bool busy;
+  final VoidCallback? onPressed;
+
+  @override
+  State<BusyButton> createState() => _BusyButtonState();
+}
+
+class _BusyButtonState extends State<BusyButton> {
+  Timer? _timer;
+  bool _slow = false;
+
+  @override
+  void didUpdateWidget(BusyButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.busy && !oldWidget.busy) {
+      _timer = Timer(const Duration(seconds: 5), () {
+        if (mounted) setState(() => _slow = true);
+      });
+    } else if (!widget.busy && oldWidget.busy) {
+      _timer?.cancel();
+      _slow = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton(
+          onPressed: widget.busy ? null : widget.onPressed,
+          child: widget.busy
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                )
+              : Text(widget.label),
+        ),
+        if (_slow) ...[
+          const SizedBox(height: 10),
+          const Text(
+            'Waking up the server. The first try can take up to a minute.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.muted),
+          ),
+        ],
+      ],
+    );
+  }
+}
