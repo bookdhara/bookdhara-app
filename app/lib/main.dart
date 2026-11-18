@@ -2,20 +2,23 @@ import 'package:flutter/material.dart';
 
 import 'api/api_client.dart';
 import 'auth/auth_store.dart';
+import 'books/books_api.dart';
 import 'screens/home_screen.dart';
 import 'screens/name_screen.dart';
 import 'screens/phone_screen.dart';
 import 'theme.dart';
 
 void main() {
-  final auth = AuthStore(ApiClient())..load();
-  runApp(BookDharaApp(auth: auth));
+  final api = ApiClient();
+  final auth = AuthStore(api)..load();
+  runApp(BookDharaApp(auth: auth, books: BooksApi(api)));
 }
 
 class BookDharaApp extends StatelessWidget {
-  const BookDharaApp({super.key, required this.auth});
+  const BookDharaApp({super.key, required this.auth, required this.books});
 
   final AuthStore auth;
+  final BooksApi books;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +38,7 @@ class BookDharaApp extends StatelessWidget {
           if (auth.user!.needsProfile) {
             return NameScreen(auth: auth);
           }
-          return HomeScreen(auth: auth);
+          return HomeScreen(auth: auth, books: books);
         },
       ),
     );

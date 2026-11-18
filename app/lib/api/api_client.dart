@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../config.dart';
 
@@ -35,13 +36,34 @@ class ApiClient {
 
   Future<Map<String, dynamic>> patch(String path, Map<String, dynamic> body) => _send('PATCH', path, body);
 
-  Future<Map<String, dynamic>> _send(String method, String path, [Map<String, dynamic>? body]) async {
+  Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
+
+  Future<List<dynamic>> getList(String path) async {
+    final data = await _send('GET', path);
+    return data['items'] as List<dynamic>? ?? const [];
+  }
+
+  /// Full address for a path the backend returns, such as a photo url.
+  String url(String path) => '$baseUrl$path';
+
+  Future<Map<String, dynamic>> uploadFile(String path, List<int> bytes, String filename, String contentType) {
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'))
+      ..files.add(http.MultipartFile.fromBytes('file', bytes,
+          filename: filename, contentType: MediaType.parse(contentType)));
+    return _execute(request);
+  }
+
+  Future<Map<String, dynamic>> _send(String method, String path, [Map<String, dynamic>? body]) {
     final request = http.Request(method, Uri.parse('$baseUrl$path'));
-    request.headers['Accept'] = 'application/json';
     if (body != null) {
       request.headers['Content-Type'] = 'application/json';
       request.body = jsonEncode(body);
     }
+    return _execute(request);
+  }
+
+  Future<Map<String, dynamic>> _execute(http.BaseRequest request) async {
+    request.headers['Accept'] = 'application/json';
     if (token != null) {
       request.headers['Authorization'] = 'Bearer $token';
     }
@@ -54,7 +76,12 @@ class ApiClient {
     }
 
     final decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
-    final data = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    // Lists come back wrapped as {"items": [...]} so every call returns a map.
+    final data = decoded is Map<String, dynamic>
+        ? decoded
+        : decoded is List
+            ? <String, dynamic>{'items': decoded}
+            : <String, dynamic>{};
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
