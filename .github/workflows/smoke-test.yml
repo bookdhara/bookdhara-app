@@ -28,6 +28,18 @@ jobs:
           done
           exit 1
 
+      - name: CORS check (as the browser app does it)
+        run: |
+          echo "--- Preflight ---"
+          curl -sS -i -X OPTIONS "$BASE/api/auth/otp/request" \
+            -H "Origin: https://bookdhara.github.io" \
+            -H "Access-Control-Request-Method: POST" \
+            -H "Access-Control-Request-Headers: accept,content-type" | head -20
+          echo "--- POST with Origin (invalid email, so no email is sent) ---"
+          curl -sS -i -X POST "$BASE/api/auth/otp/request" \
+            -H "Origin: https://bookdhara.github.io" -H "Accept: application/json" \
+            -H "Content-Type: application/json" -d '{"email":"x"}' | head -20
+
       - name: Request OTP
         run: |
           RESP=$(curl -fsS -X POST "$BASE/api/auth/otp/request" \
