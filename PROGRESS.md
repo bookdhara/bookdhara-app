@@ -37,7 +37,9 @@ Tagline: *"Kitaabein behti rahein."*
 - [ ] Database + API design
 - [x] Backend setup: Spring Boot 3.5, Java 21, Gradle, Flyway, Dockerfile, GitHub Actions CI (green)
 - [ ] Frontend setup (Flutter: web + Android)
-- [ ] Hosting connected (Vercel / Render / Neon)
+- [x] Backend live on Render (Singapore, free plan, Docker): https://bookdhara-app.onrender.com
+- [x] Database on Neon (Singapore, project `bookdhara`, direct connection, not the pooler)
+- [ ] Frontend hosting (Vercel)
 - [x] Feature: phone OTP login (backend)
   - `POST /api/auth/otp/request` {phone} -> sends OTP (returns `devCode` while no SMS provider)
   - `POST /api/auth/otp/verify` {phone, otp} -> JWT + user + `needsProfile`
@@ -46,8 +48,12 @@ Tagline: *"Kitaabein behti rahein."*
 - [ ] Feature: login screens (frontend)
 
 ## Next step
-Deploy backend (Neon DB + Render), then Flutter app with login screens.
+Flutter app (web + Android) with login screens, then deploy the web app to Vercel.
+
+**First deploy is done (18 Nov 2026), so every change now goes through a branch + PR.**
 
 ## Build notes
+- The cloud session cannot reach the live backend directly. To test it, run the "Live API smoke test" workflow (`gh api -X POST repos/bookdhara/bookdhara-app/actions/workflows/smoke-test.yml/dispatches -f ref=main`). It logs in test number 9999900001.
+- `gh` GraphQL is blocked here: use `gh api` REST calls.
 - The cloud session cannot download Maven/npm packages, so GitHub Actions is the build and test loop: push, then `gh run list -R bookdhara/bookdhara-app`.
 - Env vars for the backend: `DB_URL` (jdbc:postgresql://...), `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` (32+ chars), `CORS_ALLOWED_ORIGINS`, `OTP_EXPOSE_IN_RESPONSE`.
