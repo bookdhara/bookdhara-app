@@ -23,7 +23,7 @@ jobs:
       - name: Health check (waits for a sleeping free server to wake up)
         run: |
           for i in $(seq 1 12); do
-            if curl -fsS --max-time 30 "$BASE/actuator/health"; then echo; exit 0; fi
+            if curl -fsS --max-time 30 "$BASE/api/status"; then echo; exit 0; fi
             echo "Not up yet, retrying in 10s ($i/12)"; sleep 10
           done
           exit 1
