@@ -94,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             itemBuilder: (_) => [
-              PopupMenuItem<String>(enabled: false, child: Text(widget.auth.user?.phone ?? '')),
+              PopupMenuItem<String>(enabled: false, child: Text(widget.auth.user?.email ?? '')),
               const PopupMenuItem<String>(value: 'listings', child: Text('My listings')),
               const PopupMenuItem<String>(value: 'logout', child: Text('Log out')),
             ],

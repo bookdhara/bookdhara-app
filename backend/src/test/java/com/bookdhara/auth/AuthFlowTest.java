@@ -40,14 +40,14 @@ class AuthFlowTest {
 
     @Test
     void newUserCanLogInWithOtpAndSetName() throws Exception {
-        String otp = requestOtp("98765 43210");
+        String otp = requestOtp("  Riya.S@Example.com ");
 
         String body = mvc.perform(post("/api/auth/otp/verify")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"9876543210\",\"otp\":\"" + otp + "\"}"))
+                        .content("{\"email\":\"riya.s@example.com\",\"otp\":\"" + otp + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.needsProfile").value(true))
-                .andExpect(jsonPath("$.user.phone").value("+919876543210"))
+                .andExpect(jsonPath("$.user.email").value("riya.s@example.com"))
                 .andReturn().getResponse().getContentAsString();
         String token = json.readTree(body).get("accessToken").asText();
 
@@ -65,14 +65,14 @@ class AuthFlowTest {
 
     @Test
     void returningUserGetsSameAccount() throws Exception {
-        login("9876543210");
-        String otp = requestOtp("9876543210");
+        login("riya.s@example.com");
+        String otp = requestOtp("riya.s@example.com");
 
         mvc.perform(post("/api/auth/otp/verify")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"9876543210\",\"otp\":\"" + otp + "\"}"))
+                        .content("{\"email\":\"riya.s@example.com\",\"otp\":\"" + otp + "\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user.phone").value("+919876543210"));
+                .andExpect(jsonPath("$.user.email").value("riya.s@example.com"));
 
         Integer userCount = jdbc.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
         org.assertj.core.api.Assertions.assertThat(userCount).isEqualTo(1);
@@ -80,18 +80,18 @@ class AuthFlowTest {
 
     @Test
     void wrongOtpIsRejected() throws Exception {
-        requestOtp("9876543210");
+        requestOtp("riya.s@example.com");
 
         mvc.perform(post("/api/auth/otp/verify")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"9876543210\",\"otp\":\"000000\"}"))
+                        .content("{\"email\":\"riya.s@example.com\",\"otp\":\"000000\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void usedOtpCannotBeReused() throws Exception {
-        String otp = requestOtp("9876543210");
-        String verify = "{\"phone\":\"9876543210\",\"otp\":\"" + otp + "\"}";
+        String otp = requestOtp("riya.s@example.com");
+        String verify = "{\"email\":\"riya.s@example.com\",\"otp\":\"" + otp + "\"}";
 
         mvc.perform(post("/api/auth/otp/verify").contentType(MediaType.APPLICATION_JSON).content(verify))
                 .andExpect(status().isOk());
@@ -102,24 +102,24 @@ class AuthFlowTest {
 
     @Test
     void tooManyOtpRequestsAreBlocked() throws Exception {
-        requestOtp("9876543210");
-        requestOtp("9876543210");
-        requestOtp("9876543210");
+        requestOtp("riya.s@example.com");
+        requestOtp("riya.s@example.com");
+        requestOtp("riya.s@example.com");
 
         mvc.perform(post("/api/auth/otp/request")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"9876543210\"}"))
+                        .content("{\"email\":\"riya.s@example.com\"}"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.code").value("OTP_RATE_LIMITED"));
     }
 
     @Test
-    void invalidPhoneIsRejected() throws Exception {
+    void invalidEmailIsRejected() throws Exception {
         mvc.perform(post("/api/auth/otp/request")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"12345\"}"))
+                        .content("{\"email\":\"not-an-email\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_PHONE"));
+                .andExpect(jsonPath("$.code").value("INVALID_EMAIL"));
     }
 
     @Test
@@ -145,21 +145,21 @@ class AuthFlowTest {
         }
     }
 
-    private String requestOtp(String phone) throws Exception {
+    private String requestOtp(String email) throws Exception {
         String body = mvc.perform(post("/api/auth/otp/request")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"" + phone + "\"}"))
+                        .content("{\"email\":\"" + email + "\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         JsonNode node = json.readTree(body);
         return node.get("devCode").asText();
     }
 
-    private void login(String phone) throws Exception {
-        String otp = requestOtp(phone);
+    private void login(String email) throws Exception {
+        String otp = requestOtp(email);
         mvc.perform(post("/api/auth/otp/verify")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"" + phone + "\",\"otp\":\"" + otp + "\"}"))
+                        .content("{\"email\":\"" + email + "\",\"otp\":\"" + otp + "\"}"))
                 .andExpect(status().isOk());
     }
 }

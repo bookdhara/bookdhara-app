@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
 
-    Optional<OtpCode> findFirstByPhoneOrderByCreatedAtDesc(String phone);
+    Optional<OtpCode> findFirstByEmailOrderByCreatedAtDesc(String email);
 
-    long countByPhoneAndCreatedAtAfter(String phone, Instant after);
+    long countByEmailAndCreatedAtAfter(String email, Instant after);
 }

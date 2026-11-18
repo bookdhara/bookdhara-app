@@ -15,17 +15,17 @@ public final class TestLogin {
     private TestLogin() {
     }
 
-    public static String login(MockMvc mvc, ObjectMapper json, String phone, String name) throws Exception {
+    public static String login(MockMvc mvc, ObjectMapper json, String email, String name) throws Exception {
         String otpBody = mvc.perform(post("/api/auth/otp/request")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"" + phone + "\"}"))
+                        .content("{\"email\":\"" + email + "\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String otp = json.readTree(otpBody).get("devCode").asText();
 
         String verifyBody = mvc.perform(post("/api/auth/otp/verify")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"" + phone + "\",\"otp\":\"" + otp + "\"}"))
+                        .content("{\"email\":\"" + email + "\",\"otp\":\"" + otp + "\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         JsonNode node = json.readTree(verifyBody);

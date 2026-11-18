@@ -8,9 +8,9 @@ on:
         description: "Backend URL"
         default: "https://bookdhara-app.onrender.com"
         required: true
-      phone:
-        description: "Test phone number (a test account is created for it)"
-        default: "9999900001"
+      email:
+        description: "Test email (a test account is created for it)"
+        default: "smoke-test@example.com"
         required: true
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BASE: ${{ inputs.base_url }}
-      PHONE: ${{ inputs.phone }}
+      EMAIL: ${{ inputs.email }}
     steps:
       - name: Health check (waits for a sleeping free server to wake up)
         run: |
@@ -31,14 +31,15 @@ jobs:
       - name: Request OTP
         run: |
           RESP=$(curl -fsS -X POST "$BASE/api/auth/otp/request" \
-            -H 'Content-Type: application/json' -d "{\"phone\":\"$PHONE\"}")
-          echo "$RESP" | jq '{phone, expiresInSeconds, devCodePresent: (.devCode != null)}'
-          echo "OTP=$(echo "$RESP" | jq -r .devCode)" >> "$GITHUB_ENV"
+            -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\"}")
+          echo "$RESP" | jq '{email, expiresInSeconds, devCodePresent: (.devCode != null)}'
+          echo "OTP=$(echo "$RESP" | jq -r '.devCode // empty')" >> "$GITHUB_ENV"
 
-      - name: Verify OTP and call /api/me
+      - name: Verify OTP and call /api/me (test mode only; real emails can't be read here)
+        if: env.OTP != ''
         run: |
           RESP=$(curl -fsS -X POST "$BASE/api/auth/otp/verify" \
-            -H 'Content-Type: application/json' -d "{\"phone\":\"$PHONE\",\"otp\":\"$OTP\"}")
+            -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\",\"otp\":\"$OTP\"}")
           echo "$RESP" | jq '{needsProfile, user}'
           TOKEN=$(echo "$RESP" | jq -r .accessToken)
           curl -fsS "$BASE/api/me" -H "Authorization: Bearer $TOKEN" | jq .

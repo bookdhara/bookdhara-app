@@ -39,7 +39,7 @@ class _OtpScreenState extends State<OtpScreen> {
       _error = null;
     });
     try {
-      await widget.auth.verifyOtp(_sent.phone, _otp.text);
+      await widget.auth.verifyOtp(_sent.email, _otp.text);
       if (!mounted) return;
       // Logged in: go back to the start, where the app shows the next screen.
       Navigator.of(context).popUntil((route) => route.isFirst);
@@ -53,7 +53,7 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _resend() async {
     setState(() => _resending = true);
     try {
-      final sent = await widget.auth.requestOtp(_sent.phone);
+      final sent = await widget.auth.requestOtp(_sent.email);
       if (!mounted) return;
       setState(() {
         _sent = sent;
@@ -83,7 +83,12 @@ class _OtpScreenState extends State<OtpScreen> {
                 children: [
                   Text('Enter the code', style: textTheme.titleLarge),
                   const SizedBox(height: 8),
-                  Text('Sent to ${_sent.phone}', style: const TextStyle(color: AppColors.muted)),
+                  Text('We sent it to ${_sent.email}', style: const TextStyle(color: AppColors.muted)),
+                  if (_sent.devCode == null) ...[
+                    const SizedBox(height: 4),
+                    const Text("Can't find it? Check your Spam or Promotions folder.",
+                        style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                  ],
                   if (_sent.devCode != null) ...[
                     const SizedBox(height: 16),
                     Container(
@@ -94,7 +99,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         border: Border.all(color: const Color(0xFFF4D9A8)),
                       ),
                       child: Text(
-                        'Test mode (no SMS yet): your code is ${_sent.devCode}',
+                        'Test mode (no emails yet): your code is ${_sent.devCode}',
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),

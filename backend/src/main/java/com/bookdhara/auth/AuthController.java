@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    public record OtpRequest(@NotBlank String phone) {
+    public record OtpRequest(@NotBlank String email) {
     }
 
-    public record OtpVerifyRequest(@NotBlank String phone,
+    public record OtpVerifyRequest(@NotBlank String email,
                                    @NotBlank @Pattern(regexp = "\\d{4,8}", message = "must be digits") String otp) {
     }
 
@@ -35,12 +35,12 @@ public class AuthController {
 
     @PostMapping("/otp/request")
     public OtpService.OtpRequestResult requestOtp(@Valid @RequestBody OtpRequest request) {
-        return otpService.requestOtp(request.phone());
+        return otpService.requestOtp(request.email());
     }
 
     @PostMapping("/otp/verify")
     public LoginResponse verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        User user = otpService.verifyOtp(request.phone(), request.otp());
+        User user = otpService.verifyOtp(request.email(), request.otp());
         boolean needsProfile = user.getName() == null;
         return new LoginResponse(jwtService.createToken(user.getId()), jwtService.ttlSeconds(),
                 needsProfile, UserResponse.from(user));

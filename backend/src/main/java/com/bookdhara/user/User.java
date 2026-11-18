@@ -17,7 +17,12 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 13)
+    /** Login identity. */
+    @Column(unique = true, length = 254)
+    private String email;
+
+    /** Optional; needed later for courier deliveries. */
+    @Column(unique = true, length = 13)
     private String phone;
 
     @Column(length = 80)
@@ -30,13 +35,19 @@ public class User {
         // for JPA
     }
 
-    public User(String phone, Instant createdAt) {
-        this.phone = phone;
-        this.createdAt = createdAt;
+    public static User withEmail(String email, Instant createdAt) {
+        User user = new User();
+        user.email = email;
+        user.createdAt = createdAt;
+        return user;
     }
 
     public Long getId() {
         return id;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public String getPhone() {
