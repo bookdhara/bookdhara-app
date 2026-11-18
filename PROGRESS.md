@@ -36,19 +36,21 @@ Tagline: *"Kitaabein behti rahein."*
 - [x] Screen designs v1 (Home, Book detail, Checkout, Pickup code, List a book, Wallet): https://claude.ai/artifact/LWq8k5YwGrrTtWGFhhCCc7
 - [ ] Database + API design
 - [x] Backend setup: Spring Boot 3.5, Java 21, Gradle, Flyway, Dockerfile, GitHub Actions CI (green)
-- [ ] Frontend setup (Flutter: web + Android)
+- [x] Frontend setup: Flutter in `app/` (web first; Android later). CI fills in standard project files with `flutter create`, then analyze/test/build
 - [x] Backend live on Render (Singapore, free plan, Docker): https://bookdhara-app.onrender.com
 - [x] Database on Neon (Singapore, project `bookdhara`, direct connection, not the pooler)
-- [ ] Frontend hosting (Vercel)
+- [x] App live on GitHub Pages: https://bookdhara.github.io/bookdhara-app/ (deploys on every merge to main; chose Pages over Vercel to avoid another account)
 - [x] Feature: phone OTP login (backend)
   - `POST /api/auth/otp/request` {phone} -> sends OTP (returns `devCode` while no SMS provider)
   - `POST /api/auth/otp/verify` {phone, otp} -> JWT + user + `needsProfile`
   - `GET /api/me`, `PATCH /api/me` {name} (Bearer token)
   - SMS provider not chosen yet (`SmsSender` interface; `LoggingSmsSender` placeholder)
-- [ ] Feature: login screens (frontend)
+- [x] Feature: login screens (phone -> OTP -> name -> Home with empty state)
 
 ## Next step
-Flutter app (web + Android) with login screens, then deploy the web app to Vercel.
+Books: list a book (ISBN lookup, photos, condition, price) and show listings on Home.
+
+Later: migrate from `package:flutter/material.dart` to `package:material_ui` (Flutter deprecation notice), choose an SMS provider, Android build.
 
 **First deploy is done (18 Nov 2026), so every change now goes through a branch + PR.**
 
