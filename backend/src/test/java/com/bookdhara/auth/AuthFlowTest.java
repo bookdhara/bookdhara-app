@@ -32,6 +32,8 @@ class AuthFlowTest {
 
     @BeforeEach
     void cleanDatabase() {
+        jdbc.update("DELETE FROM book_photos");
+        jdbc.update("DELETE FROM books");
         jdbc.update("DELETE FROM otp_codes");
         jdbc.update("DELETE FROM users");
     }
