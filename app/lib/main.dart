@@ -10,6 +10,8 @@ import 'theme.dart';
 
 void main() {
   final api = ApiClient();
+  // Start waking the free server right away, while the user is still typing.
+  api.wakeUp();
   final auth = AuthStore(api)..load();
   runApp(BookDharaApp(auth: auth, books: BooksApi(api)));
 }
