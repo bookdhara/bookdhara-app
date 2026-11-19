@@ -98,8 +98,11 @@ class AuthStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveName(String name) async {
-    user = AppUser.fromJson(await api.patch('/api/me', {'name': name.trim()}));
+  Future<void> saveName(String name) => saveProfile(name: name);
+
+  /// Updates the name, and the phone too when given ('' removes it).
+  Future<void> saveProfile({required String name, String? phone}) async {
+    user = AppUser.fromJson(await api.patch('/api/me', {'name': name.trim(), if (phone != null) 'phone': phone}));
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userKey, jsonEncode(user!.toJson()));
     notifyListeners();

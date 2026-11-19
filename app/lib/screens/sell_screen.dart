@@ -146,11 +146,11 @@ class _SellScreenState extends State<SellScreen> {
   Widget build(BuildContext context) {
     final price = _priceValue;
     return Scaffold(
-      appBar: AppBar(title: const Text('List a book')),
+      appBar: AppBar(title: Text('List a book')),
       body: Form(
         key: _form,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           children: [
             _section('ISBN (optional)'),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -159,43 +159,43 @@ class _SellScreenState extends State<SellScreen> {
                   controller: _isbn,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9Xx\-\s]'))],
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Back cover, above the barcode',
                   ),
                   onFieldSubmitted: (_) => _lookup(),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               SizedBox(
                 height: 54,
                 child: OutlinedButton(
                   onPressed: _lookingUp ? null : _lookup,
                   child: _lookingUp
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Find'),
+                      ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text('Find'),
                 ),
               ),
             ]),
             if (_isbnMessage != null)
               Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(_isbnMessage!, style: const TextStyle(fontSize: 13, color: AppColors.muted)),
+                padding: EdgeInsets.only(top: 6),
+                child: Text(_isbnMessage!, style: TextStyle(fontSize: 13, color: context.pal.muted)),
               ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _section('Book'),
             TextFormField(
               controller: _title,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Title'),
+              decoration: InputDecoration(labelText: 'Title'),
               validator: (v) => _required(v, 'the title'),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextFormField(
               controller: _author,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Author (optional)'),
+              decoration: InputDecoration(labelText: 'Author (optional)'),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _section('Photos (up to 3)'),
             Wrap(spacing: 10, runSpacing: 10, children: [
               for (var i = 0; i < _photos.length; i++)
@@ -213,7 +213,7 @@ class _SellScreenState extends State<SellScreen> {
                       visualDensity: VisualDensity.compact,
                       style: IconButton.styleFrom(backgroundColor: Colors.black54),
                       onPressed: () => setState(() => _photos.removeAt(i)),
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: Icon(Icons.close, color: Colors.white),
                     ),
                   ),
                 ]),
@@ -227,7 +227,7 @@ class _SellScreenState extends State<SellScreen> {
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Column(mainAxisSize: MainAxisSize.min, children: [
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.add_a_photo_outlined),
                       SizedBox(height: 4),
                       Text('Add', style: TextStyle(fontSize: 12)),
@@ -235,7 +235,7 @@ class _SellScreenState extends State<SellScreen> {
                   ),
                 ),
             ]),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _section('Condition'),
             SegmentedButton<BookCondition>(
               segments: [
@@ -245,7 +245,7 @@ class _SellScreenState extends State<SellScreen> {
               showSelectedIcon: false,
               onSelectionChanged: (s) => setState(() => _condition = s.first),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _section('Price'),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(
@@ -253,16 +253,16 @@ class _SellScreenState extends State<SellScreen> {
                   controller: _mrp,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(labelText: 'MRP (optional)', prefixText: '₹ '),
+                  decoration: InputDecoration(labelText: 'MRP (optional)', prefixText: '₹ '),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: TextFormField(
                   controller: _price,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(labelText: 'Your price', prefixText: '₹ '),
+                  decoration: InputDecoration(labelText: 'Your price', prefixText: '₹ '),
                   validator: (v) {
                     final n = int.tryParse(v ?? '');
                     if (n == null || n < 1) return 'Enter a price';
@@ -272,12 +272,12 @@ class _SellScreenState extends State<SellScreen> {
                 ),
               ),
             ]),
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 6),
               child: Text('Tip: used books sell fastest at 30–50% of MRP.',
-                  style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                  style: TextStyle(fontSize: 12, color: context.pal.muted)),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _section('When it sells, I want'),
             Row(children: [
               Expanded(
@@ -288,7 +288,7 @@ class _SellScreenState extends State<SellScreen> {
                   onTap: () => setState(() => _credits = false),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: _ChoiceCard(
                   selected: _credits,
@@ -298,25 +298,25 @@ class _SellScreenState extends State<SellScreen> {
                 ),
               ),
             ]),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _section('How buyers can get it'),
             CheckboxListTile(
               value: _pickup,
               onChanged: (v) => setState(() => _pickup = v ?? false),
-              title: const Text('Local pickup'),
-              subtitle: const Text('Meet the buyer in your city'),
+              title: Text('Local pickup'),
+              subtitle: Text('Meet the buyer in your city'),
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
             ),
             CheckboxListTile(
               value: _shipping,
               onChanged: (v) => setState(() => _shipping = v ?? false),
-              title: const Text('Home delivery'),
-              subtitle: const Text('A courier picks it up from you'),
+              title: Text('Home delivery'),
+              subtitle: Text('A courier picks it up from you'),
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _section('Your location'),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(
@@ -324,11 +324,11 @@ class _SellScreenState extends State<SellScreen> {
                 child: TextFormField(
                   controller: _city,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'City'),
+                  decoration: InputDecoration(labelText: 'City'),
                   validator: (v) => _required(v, 'your city'),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 flex: 2,
                 child: TextFormField(
@@ -336,26 +336,26 @@ class _SellScreenState extends State<SellScreen> {
                   keyboardType: TextInputType.number,
                   maxLength: 6,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(labelText: 'Pincode', counterText: ''),
+                  decoration: InputDecoration(labelText: 'Pincode', counterText: ''),
                   validator: (v) => RegExp(r'^\d{6}$').hasMatch(v ?? '') ? null : '6 digits',
                 ),
               ),
             ]),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _section("Note for buyers (optional)"),
             TextFormField(
               controller: _note,
               maxLines: 3,
               maxLength: 500,
-              decoration: const InputDecoration(hintText: 'Any marks, missing pages, or why you loved it'),
+              decoration: InputDecoration(hintText: 'Any marks, missing pages, or why you loved it'),
             ),
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(_error!, style: const TextStyle(color: AppColors.danger)),
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text(_error!, style: TextStyle(color: context.pal.danger)),
               ),
             BusyButton(label: 'List my book', busy: _saving, onPressed: _submit),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
           ],
         ),
       ),
@@ -363,13 +363,13 @@ class _SellScreenState extends State<SellScreen> {
   }
 
   Widget _section(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
+        padding: EdgeInsets.only(bottom: 8),
+        child: Text(text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.pal.muted)),
       );
 }
 
 class _ChoiceCard extends StatelessWidget {
-  const _ChoiceCard({required this.selected, required this.title, required this.value, required this.onTap});
+  _ChoiceCard({required this.selected, required this.title, required this.value, required this.onTap});
 
   final bool selected;
   final String title;
@@ -385,16 +385,16 @@ class _ChoiceCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: selected ? AppColors.primaryTint : AppColors.surface,
+            color: selected ? context.pal.primaryTint : context.pal.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? AppColors.primary : AppColors.border, width: selected ? 2 : 1),
+            border: Border.all(color: selected ? context.pal.primary : context.pal.border, width: selected ? 2 : 1),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            Text(title, style: TextStyle(fontWeight: FontWeight.w600)),
+            SizedBox(height: 4),
+            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           ]),
         ),
       ),

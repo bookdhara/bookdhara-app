@@ -25,7 +25,7 @@ class _BusyButtonState extends State<BusyButton> {
   void didUpdateWidget(BusyButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.busy && !oldWidget.busy) {
-      _timer = Timer(const Duration(seconds: 5), () {
+      _timer = Timer(Duration(seconds: 5), () {
         if (mounted) setState(() => _slow = true);
       });
     } else if (!widget.busy && oldWidget.busy) {
@@ -48,19 +48,19 @@ class _BusyButtonState extends State<BusyButton> {
         FilledButton(
           onPressed: widget.busy ? null : widget.onPressed,
           child: widget.busy
-              ? const SizedBox(
+              ? SizedBox(
                   width: 22,
                   height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: context.pal.onPrimary),
                 )
               : Text(widget.label),
         ),
         if (_slow) ...[
-          const SizedBox(height: 10),
-          const Text(
+          SizedBox(height: 10),
+          Text(
             'Waking up the server. The first try can take up to a minute, please wait.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppColors.muted),
+            style: TextStyle(fontSize: 13, color: context.pal.muted),
           ),
         ],
       ],

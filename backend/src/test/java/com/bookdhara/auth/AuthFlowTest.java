@@ -79,6 +79,30 @@ class AuthFlowTest {
     }
 
     @Test
+    void phoneCanBeAddedChangedAndRemovedInProfile() throws Exception {
+        String token = com.bookdhara.TestLogin.login(mvc, json, "riya.s@example.com", "Riya");
+        String other = com.bookdhara.TestLogin.login(mvc, json, "aman@example.com", "Aman");
+
+        mvc.perform(patch("/api/me").header("Authorization", token).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Riya\",\"phone\":\"98765 43210\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phone").value("+919876543210"));
+        mvc.perform(patch("/api/me").header("Authorization", other).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Aman\",\"phone\":\"9876543210\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("PHONE_TAKEN"));
+        mvc.perform(patch("/api/me").header("Authorization", token).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Riya\",\"phone\":\"123\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(patch("/api/me").header("Authorization", token).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Riya\"}"))
+                .andExpect(jsonPath("$.phone").value("+919876543210"));
+        mvc.perform(patch("/api/me").header("Authorization", token).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Riya\",\"phone\":\"\"}"))
+                .andExpect(jsonPath("$.phone").doesNotExist());
+    }
+
+    @Test
     void wrongOtpIsRejected() throws Exception {
         requestOtp("riya.s@example.com");
 

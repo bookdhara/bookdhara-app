@@ -1,5 +1,6 @@
 package com.bookdhara.user;
 
+import com.bookdhara.auth.PhoneNumbers;
 import com.bookdhara.common.ApiException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -18,7 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/me")
 public class MeController {
 
-    public record UpdateProfileRequest(@NotBlank @Size(max = 80) String name) {
+    /** Name is required. Phone is optional: leave it out or send "" to remove it. */
+    public record UpdateProfileRequest(@NotBlank @Size(max = 80) String name, @Size(max = 20) String phone) {
     }
 
     private final UserRepository users;
@@ -37,6 +39,18 @@ public class MeController {
     public UserResponse update(@AuthenticationPrincipal Long userId, @Valid @RequestBody UpdateProfileRequest request) {
         User user = load(userId);
         user.setName(request.name().trim());
+        if (request.phone() != null) {
+            if (request.phone().isBlank()) {
+                user.setPhone(null);
+            } else {
+                String phone = PhoneNumbers.normalize(request.phone());
+                if (users.existsByPhoneAndIdNot(phone, userId)) {
+                    throw new ApiException(HttpStatus.CONFLICT, "PHONE_TAKEN",
+                            "This mobile number is already used by another account.");
+                }
+                user.setPhone(phone);
+            }
+        }
         return UserResponse.from(users.save(user));
     }
 

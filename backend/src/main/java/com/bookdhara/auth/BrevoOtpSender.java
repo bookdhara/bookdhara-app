@@ -50,12 +50,27 @@ public class BrevoOtpSender implements OtpSender {
                           <p style="color:#5B6763">Kitaabein behti rahein.</p>
                         </div>
                         """.formatted(code));
+        unblockIfUnsubscribed(email);
         try {
             client.post().uri("/smtp/email").contentType(MediaType.APPLICATION_JSON).body(body).retrieve().toBodilessEntity();
         } catch (RestClientException e) {
             log.error("Brevo could not send the login code: {}", e.getMessage());
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "EMAIL_FAILED",
                     "We couldn't send the email right now. Please try again in a minute.");
+        }
+    }
+
+    /**
+     * Gmail shows an "Unsubscribe" button on every Brevo email. If someone pressed it, Brevo would stop
+     * delivering their login codes too. They are asking for a code right now, so lift that block first.
+     * Best effort: a 404 (not blocked) or any error is ignored.
+     */
+    private void unblockIfUnsubscribed(String email) {
+        try {
+            client.delete().uri("/smtp/blockedContacts/{email}", email).retrieve().toBodilessEntity();
+            log.info("Removed a transactional email block before sending a login code");
+        } catch (RestClientException ignored) {
+            // Usually 404: the address wasn't blocked.
         }
     }
 

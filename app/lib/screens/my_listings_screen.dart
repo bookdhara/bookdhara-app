@@ -39,25 +39,25 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   Widget build(BuildContext context) {
     final items = _items;
     return Scaffold(
-      appBar: AppBar(title: const Text('My listings')),
+      appBar: AppBar(title: Text('My listings')),
       body: _error != null
           ? Center(child: Text(_error!))
           : items == null
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator())
               : items.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Padding(
                         padding: EdgeInsets.all(24),
                         child: Text("You haven't listed any books yet.",
-                            textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted)),
+                            textAlign: TextAlign.center, style: TextStyle(color: context.pal.muted)),
                       ),
                     )
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         itemCount: items.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => SizedBox(height: 12),
                         itemBuilder: (context, i) {
                           final book = items[i];
                           return InkWell(
@@ -80,16 +80,16 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                       : widget.books.photoUrl(book.coverPhotoUrl!),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text(book.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 2),
+                                  Text(book.title, style: TextStyle(fontWeight: FontWeight.w600)),
+                                  SizedBox(height: 2),
                                   Text('₹${book.price} · ${book.condition.label}',
-                                      style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                                      style: TextStyle(color: context.pal.muted, fontSize: 13)),
                                 ]),
                               ),
-                              const Icon(Icons.chevron_right, color: AppColors.muted),
+                              Icon(Icons.chevron_right, color: context.pal.muted),
                             ]),
                           );
                         },

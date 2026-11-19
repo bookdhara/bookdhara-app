@@ -54,19 +54,51 @@ class NewBook {
       };
 }
 
+enum BookSort {
+  newest('NEWEST', 'Newest first'),
+  priceLow('PRICE_LOW', 'Price: low to high'),
+  priceHigh('PRICE_HIGH', 'Price: high to low');
+
+  const BookSort(this.api, this.label);
+
+  final String api;
+  final String label;
+}
+
+/// Filters for Home. All optional.
+class BrowseFilters {
+  const BrowseFilters({this.city, this.condition, this.maxPrice, this.sort = BookSort.newest});
+
+  final String? city;
+  final BookCondition? condition;
+  final int? maxPrice;
+  final BookSort sort;
+
+  int get activeCount =>
+      (city != null ? 1 : 0) + (condition != null ? 1 : 0) + (maxPrice != null ? 1 : 0) + (sort != BookSort.newest ? 1 : 0);
+}
+
 class BooksApi {
   BooksApi(this.api);
 
   final ApiClient api;
 
-  Future<List<BookSummary>> browse({String? query, String? city}) async {
+  Future<List<BookSummary>> browse({String? query, BrowseFilters filters = const BrowseFilters()}) async {
     final params = <String, String>{
       if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
-      if (city != null && city.trim().isNotEmpty) 'city': city.trim(),
+      if (filters.city != null) 'city': filters.city!,
+      if (filters.condition != null) 'condition': filters.condition!.api,
+      if (filters.maxPrice != null) 'maxPrice': '${filters.maxPrice}',
+      if (filters.sort != BookSort.newest) 'sort': filters.sort.api,
     };
     final path = Uri(path: '/api/books', queryParameters: params.isEmpty ? null : params).toString();
     final items = await api.getList(path);
     return items.map((e) => BookSummary.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<String>> cities() async {
+    final items = await api.getList('/api/books/cities');
+    return items.cast<String>();
   }
 
   Future<List<BookSummary>> myListings() async {
