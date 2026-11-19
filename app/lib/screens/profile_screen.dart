@@ -4,10 +4,13 @@ import 'package:flutter/services.dart';
 import '../api/api_client.dart';
 import '../auth/auth_store.dart';
 import '../books/books_api.dart';
+import '../orders/orders_api.dart';
 import '../settings/app_settings.dart';
 import '../theme.dart';
 import 'info_screens.dart';
 import 'my_listings_screen.dart';
+import 'my_orders_screen.dart';
+import 'wallet_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key, required this.auth, required this.books, required this.settings});
@@ -73,8 +76,20 @@ class ProfileScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.receipt_long_outlined),
                 title: const Text('My orders'),
-                subtitle: const Text('Coming with buying, in the next update'),
-                enabled: false,
+                subtitle: const Text('Books you bought and sold'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => MyOrdersScreen(orders: OrdersApi(books.api)),
+                )),
+              ),
+              ListTile(
+                leading: const Icon(Icons.account_balance_wallet_outlined),
+                title: const Text('Wallet'),
+                subtitle: const Text('Credits and earnings'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => WalletScreen(orders: OrdersApi(books.api)),
+                )),
               ),
               const SizedBox(height: 8),
               _Section('Appearance'),
