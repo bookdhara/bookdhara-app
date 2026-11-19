@@ -31,6 +31,16 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    /** BCrypt hash; null until the user sets a password. */
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
+
+    @Column(name = "failed_logins", nullable = false)
+    private int failedLogins;
+
+    @Column(name = "locked_until")
+    private Instant lockedUntil;
+
     protected User() {
         // for JPA
     }
@@ -68,5 +78,37 @@ public class User {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public boolean hasPassword() {
+        return passwordHash != null;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.failedLogins = 0;
+        this.lockedUntil = null;
+    }
+
+    public boolean isLocked(Instant now) {
+        return lockedUntil != null && now.isBefore(lockedUntil);
+    }
+
+    /** Counts a wrong password; after too many, locks password login for a while. */
+    public void recordFailedLogin(Instant now, int maxFailures, java.time.Duration lockFor) {
+        failedLogins++;
+        if (failedLogins >= maxFailures) {
+            lockedUntil = now.plus(lockFor);
+            failedLogins = 0;
+        }
+    }
+
+    public void recordSuccessfulLogin() {
+        failedLogins = 0;
+        lockedUntil = null;
     }
 }

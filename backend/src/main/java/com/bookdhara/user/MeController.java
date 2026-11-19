@@ -1,5 +1,6 @@
 package com.bookdhara.user;
 
+import com.bookdhara.auth.PasswordService;
 import com.bookdhara.auth.PhoneNumbers;
 import com.bookdhara.common.ApiException;
 import jakarta.validation.Valid;
@@ -23,10 +24,21 @@ public class MeController {
     public record UpdateProfileRequest(@NotBlank @Size(max = 80) String name, @Size(max = 20) String phone) {
     }
 
-    private final UserRepository users;
+    public record SetPasswordRequest(String currentPassword, @NotBlank String newPassword) {
+    }
 
-    public MeController(UserRepository users) {
+    private final UserRepository users;
+    private final PasswordService passwords;
+
+    public MeController(UserRepository users, PasswordService passwords) {
         this.users = users;
+        this.passwords = passwords;
+    }
+
+    /** Set a password (or change it: then the current one is required). */
+    @org.springframework.web.bind.annotation.PostMapping("/password")
+    public UserResponse setPassword(@AuthenticationPrincipal Long userId, @Valid @RequestBody SetPasswordRequest request) {
+        return UserResponse.from(passwords.setPassword(userId, request.currentPassword(), request.newPassword()));
     }
 
     @GetMapping
