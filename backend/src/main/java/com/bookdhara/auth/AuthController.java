@@ -1,11 +1,15 @@
 package com.bookdhara.auth;
 
+import com.bookdhara.auth.google.GoogleAuthService;
+import com.bookdhara.auth.google.GoogleProperties;
 import com.bookdhara.security.JwtService;
 import com.bookdhara.user.User;
 import com.bookdhara.user.UserResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,14 +37,38 @@ public class AuthController {
                                        @NotBlank String newPassword) {
     }
 
+    public record GoogleLoginRequest(@NotBlank @Size(max = 4096) String credential) {
+    }
+
+    /** Login options the app should show. The Google client id is public by design. */
+    public record ProvidersResponse(String googleClientId) {
+    }
+
     private final OtpService otpService;
     private final PasswordService passwordService;
+    private final GoogleAuthService googleAuthService;
+    private final GoogleProperties googleProperties;
     private final JwtService jwtService;
 
-    public AuthController(OtpService otpService, PasswordService passwordService, JwtService jwtService) {
+    public AuthController(OtpService otpService, PasswordService passwordService,
+                          GoogleAuthService googleAuthService, GoogleProperties googleProperties,
+                          JwtService jwtService) {
         this.otpService = otpService;
         this.passwordService = passwordService;
+        this.googleAuthService = googleAuthService;
+        this.googleProperties = googleProperties;
         this.jwtService = jwtService;
+    }
+
+    @GetMapping("/providers")
+    public ProvidersResponse providers() {
+        return new ProvidersResponse(googleAuthService.enabled() ? googleProperties.clientId().trim() : null);
+    }
+
+    /** "Continue with Google": the app sends the ID token Google gave it. */
+    @PostMapping("/google")
+    public LoginResponse google(@Valid @RequestBody GoogleLoginRequest request) {
+        return loggedIn(googleAuthService.login(request.credential()));
     }
 
     @PostMapping("/login")

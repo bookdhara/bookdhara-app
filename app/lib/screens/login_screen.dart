@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../auth/auth_store.dart';
 import '../auth/email.dart';
+import '../auth/google_button.dart';
 import '../theme.dart';
 import '../widgets/busy_button.dart';
 import 'otp_screen.dart';
@@ -25,6 +26,40 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showPassword = false;
   String? _error;
   bool _busy = false;
+  String? _googleClientId;
+  bool _googleBusy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (GoogleSignInButton.supported) _loadGoogle();
+  }
+
+  /// Shows the Google button only once the server says Google sign-in is set up.
+  Future<void> _loadGoogle() async {
+    try {
+      final id = await widget.auth.googleClientId();
+      if (mounted) setState(() => _googleClientId = id);
+    } catch (_) {
+      // No Google button; email login still works.
+    }
+  }
+
+  Future<void> _google(String credential) async {
+    setState(() {
+      _googleBusy = true;
+      _error = null;
+    });
+    try {
+      await widget.auth.loginWithGoogle(credential);
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Google sign-in failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -85,6 +120,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 4),
                     Text('Kitaabein behti rahein.', style: TextStyle(color: context.pal.muted)),
                     const SizedBox(height: 40),
+                    if (_googleClientId != null) ...[
+                      if (_googleBusy)
+                        const SizedBox(height: 48, child: Center(child: CircularProgressIndicator()))
+                      else
+                        GoogleSignInButton(clientId: _googleClientId!, onCredential: _google),
+                      const SizedBox(height: 20),
+                      Row(children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('or use email', style: TextStyle(color: context.pal.muted)),
+                        ),
+                        const Expanded(child: Divider()),
+                      ]),
+                      const SizedBox(height: 20),
+                    ],
                     Text(_usePassword ? 'Log in' : 'Log in with your email', style: textTheme.titleLarge),
                     const SizedBox(height: 8),
                     Text(

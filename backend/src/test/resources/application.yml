@@ -28,5 +28,7 @@ bookdhara:
   rate-limit:
     code-requests: 1000
     login-attempts: 1000
+  google:
+    client-id: ""
   cors:
     allowed-origins: http://localhost:3000
