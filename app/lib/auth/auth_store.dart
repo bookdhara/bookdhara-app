@@ -6,21 +6,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
 
 class AppUser {
-  AppUser({required this.id, this.email, this.phone, this.name});
+  AppUser({required this.id, this.email, this.phone, this.name, this.hasPassword = false});
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: (json['id'] as num).toInt(),
         email: json['email'] as String?,
         phone: json['phone'] as String?,
         name: json['name'] as String?,
+        hasPassword: json['hasPassword'] as bool? ?? false,
       );
 
   final int id;
   final String? email;
   final String? phone;
   final String? name;
+  final bool hasPassword;
 
-  Map<String, dynamic> toJson() => {'id': id, 'email': email, 'phone': phone, 'name': name};
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'email': email, 'phone': phone, 'name': name, 'hasPassword': hasPassword};
 
   bool get needsProfile => name == null || name!.trim().isEmpty;
 }
@@ -88,7 +91,29 @@ class AuthStore extends ChangeNotifier {
   }
 
   Future<void> verifyOtp(String email, String otp) async {
-    final data = await api.post('/api/auth/otp/verify', {'email': email, 'otp': otp});
+    await _loggedIn(await api.post('/api/auth/otp/verify', {'email': email, 'otp': otp}));
+  }
+
+  Future<void> loginWithPassword(String email, String password) async {
+    await _loggedIn(await api.post('/api/auth/login', {'email': email.trim(), 'password': password}));
+  }
+
+  /// Forgot password: [otp] is the code from /otp/request.
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    await _loggedIn(await api.post('/api/auth/password/reset', {'email': email, 'otp': otp, 'newPassword': newPassword}));
+  }
+
+  Future<void> setPassword({String? current, required String newPassword}) async {
+    user = AppUser.fromJson(await api.post('/api/me/password', {
+      if (current != null) 'currentPassword': current,
+      'newPassword': newPassword,
+    }));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(user!.toJson()));
+    notifyListeners();
+  }
+
+  Future<void> _loggedIn(Map<String, dynamic> data) async {
     final token = data['accessToken'] as String;
     api.token = token;
     final prefs = await SharedPreferences.getInstance();
