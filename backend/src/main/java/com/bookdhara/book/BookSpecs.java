@@ -26,6 +26,14 @@ final class BookSpecs {
                 cb.equal(root.get("isbn"), digits));
     }
 
+    static Specification<Book> withCondition(com.bookdhara.book.BookEnums.Condition condition) {
+        return (root, query, cb) -> cb.equal(root.get("condition"), condition);
+    }
+
+    static Specification<Book> priceAtMost(int maxPrice) {
+        return (root, query, cb) -> cb.le(root.get("price"), maxPrice);
+    }
+
     static Specification<Book> inCity(String city) {
         return (root, query, cb) -> cb.equal(cb.lower(root.get("city")), city.trim().toLowerCase());
     }

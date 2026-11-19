@@ -52,29 +52,29 @@ class _NameScreenState extends State<NameScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: BoxConstraints(maxWidth: 420),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('Welcome to BookDhara!', style: textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'What should buyers and sellers call you?',
-                    style: TextStyle(color: AppColors.muted),
+                    style: TextStyle(color: context.pal.muted),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   TextField(
                     controller: _name,
                     autofocus: true,
                     textCapitalization: TextCapitalization.words,
-                    autofillHints: const [AutofillHints.name],
+                    autofillHints: [AutofillHints.name],
                     maxLength: 80,
                     onSubmitted: (_) => _save(),
                     decoration: InputDecoration(labelText: 'Your name', counterText: '', errorText: _error),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   BusyButton(label: 'Continue', busy: _busy, onPressed: _save),
                 ],
               ),

@@ -63,17 +63,41 @@ public class BookService {
         return toDetail(book, sellerId);
     }
 
+    /** How Home can order results. */
+    public enum SortBy { NEWEST, PRICE_LOW, PRICE_HIGH }
+
+    /** Home filters. Every field is optional. */
+    public record BrowseFilter(String q, String city, BookEnums.Condition condition, Integer maxPrice, SortBy sort) {
+    }
+
     @Transactional(readOnly = true)
-    public List<BookSummary> browse(Long viewerId, String q, String city, int page) {
+    public List<BookSummary> browse(Long viewerId, BrowseFilter f, int page) {
         Specification<Book> spec = BookSpecs.available().and(BookSpecs.notSoldBy(viewerId));
-        if (q != null && !q.isBlank()) {
-            spec = spec.and(BookSpecs.matches(q.trim()));
+        if (f.q() != null && !f.q().isBlank()) {
+            spec = spec.and(BookSpecs.matches(f.q().trim()));
         }
-        if (city != null && !city.isBlank()) {
-            spec = spec.and(BookSpecs.inCity(city));
+        if (f.city() != null && !f.city().isBlank()) {
+            spec = spec.and(BookSpecs.inCity(f.city()));
         }
-        var pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
+        if (f.condition() != null) {
+            spec = spec.and(BookSpecs.withCondition(f.condition()));
+        }
+        if (f.maxPrice() != null && f.maxPrice() > 0) {
+            spec = spec.and(BookSpecs.priceAtMost(f.maxPrice()));
+        }
+        Sort sort = switch (f.sort() == null ? SortBy.NEWEST : f.sort()) {
+            case PRICE_LOW -> Sort.by(Sort.Order.asc("price"), Sort.Order.desc("createdAt"));
+            case PRICE_HIGH -> Sort.by(Sort.Order.desc("price"), Sort.Order.desc("createdAt"));
+            case NEWEST -> Sort.by(Sort.Direction.DESC, "createdAt");
+        };
+        var pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, sort);
         return toSummaries(books.findAll(spec, pageable).getContent());
+    }
+
+    /** Cities that currently have books for sale, for the Home city filter. */
+    @Transactional(readOnly = true)
+    public List<String> cities() {
+        return books.findAvailableCities();
     }
 
     @Transactional(readOnly = true)

@@ -6,15 +6,17 @@ import '../books/book_models.dart';
 import '../books/books_api.dart';
 import '../theme.dart';
 import '../widgets/book_cover.dart';
+import '../settings/app_settings.dart';
 import 'book_detail_screen.dart';
-import 'my_listings_screen.dart';
+import 'profile_screen.dart';
 import 'sell_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.auth, required this.books});
+  const HomeScreen({super.key, required this.auth, required this.books, required this.settings});
 
   final AuthStore auth;
   final BooksApi books;
+  final AppSettings settings;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -25,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<BookSummary>? _items;
   String? _error;
   String _query = '';
+  BrowseFilters _filters = const BrowseFilters();
 
   @override
   void initState() {
@@ -41,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _load() async {
     setState(() => _error = null);
     try {
-      final items = await widget.books.browse(query: _query);
+      final items = await widget.books.browse(query: _query, filters: _filters);
       if (mounted) setState(() => _items = items);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -60,8 +63,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (created == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your book is listed! Find it under My listings.')),
+        SnackBar(content: Text('Your book is listed! Find it under My listings.')),
       );
+    }
+  }
+
+  Future<void> _openFilters() async {
+    final chosen = await showModalBottomSheet<BrowseFilters>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _FiltersSheet(books: widget.books, initial: _filters),
+    );
+    if (chosen != null && mounted) {
+      setState(() {
+        _filters = chosen;
+        _items = null;
+      });
+      _load();
     }
   }
 
@@ -79,57 +97,54 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 20,
-        title: Text('BookDhara', style: textTheme.titleLarge?.copyWith(color: AppColors.primary, fontSize: 24)),
+        title: Text('BookDhara', style: textTheme.titleLarge?.copyWith(color: context.pal.primary, fontSize: 24)),
         actions: [
-          PopupMenuButton<String>(
-            tooltip: 'Account',
-            icon: const Icon(Icons.account_circle_outlined),
-            onSelected: (value) {
-              if (value == 'listings') {
-                Navigator.of(context).push(MaterialPageRoute<void>(
-                  builder: (_) => MyListingsScreen(books: widget.books),
-                ));
-              } else if (value == 'logout') {
-                widget.auth.logout();
-              }
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem<String>(enabled: false, child: Text(widget.auth.user?.email ?? '')),
-              const PopupMenuItem<String>(value: 'listings', child: Text('My listings')),
-              const PopupMenuItem<String>(value: 'logout', child: Text('Log out')),
-            ],
+          IconButton(
+            tooltip: 'Profile',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => ProfileScreen(auth: widget.auth, books: widget.books, settings: widget.settings),
+            )),
+            icon: CircleAvatar(
+              radius: 16,
+              backgroundColor: context.pal.primaryTint,
+              foregroundColor: context.pal.primary,
+              child: Text(
+                firstName.isEmpty ? '?' : firstName.characters.first.toUpperCase(),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openSell,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Sell a book'),
+        backgroundColor: context.pal.primary,
+        foregroundColor: context.pal.onPrimary,
+        icon: Icon(Icons.add),
+        label: Text('Sell a book'),
       ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
               sliver: SliverList.list(children: [
                 Text('Hi $firstName 👋', style: textTheme.titleLarge),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 TextField(
                   controller: _search,
                   textInputAction: TextInputAction.search,
                   onSubmitted: _runSearch,
                   decoration: InputDecoration(
                     hintText: 'Search title, author or ISBN',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: Icon(Icons.search),
                     suffixIcon: _query.isEmpty
                         ? null
                         : IconButton(
                             tooltip: 'Clear search',
-                            icon: const Icon(Icons.close),
+                            icon: Icon(Icons.close),
                             onPressed: () {
                               _search.clear();
                               _runSearch('');
@@ -137,14 +152,31 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text(_query.isEmpty ? 'Recently listed' : 'Results for "$_query"',
-                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 16),
+                Row(children: [
+                  Expanded(
+                    child: Text(
+                      _query.isEmpty
+                          ? (_filters.activeCount == 0 ? 'Recently listed' : 'Filtered books')
+                          : 'Results for "$_query"',
+                      style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Badge(
+                    isLabelVisible: _filters.activeCount > 0,
+                    label: Text('${_filters.activeCount}'),
+                    child: OutlinedButton.icon(
+                      onPressed: _openFilters,
+                      icon: const Icon(Icons.tune, size: 18),
+                      label: const Text('Filters'),
+                    ),
+                  ),
+                ]),
                 const SizedBox(height: 12),
               ]),
             ),
             ..._content(textTheme),
-            const SliverToBoxAdapter(child: SizedBox(height: 96)),
+            SliverToBoxAdapter(child: SizedBox(height: 96)),
           ],
         ),
       ),
@@ -156,11 +188,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(children: [
               Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              OutlinedButton(onPressed: _load, child: const Text('Try again')),
+              SizedBox(height: 12),
+              OutlinedButton(onPressed: _load, child: Text('Try again')),
             ]),
           ),
         ),
@@ -168,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (_items == null) {
       return [
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.all(40),
             child: Center(child: CircularProgressIndicator()),
@@ -180,17 +212,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(children: [
-              const Icon(Icons.menu_book_outlined, size: 56, color: AppColors.muted),
-              const SizedBox(height: 12),
+              Icon(Icons.menu_book_outlined, size: 56, color: context.pal.muted),
+              SizedBox(height: 12),
               Text(_query.isEmpty ? 'No books listed yet' : 'No books match your search',
                   textAlign: TextAlign.center, style: textTheme.titleMedium),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Text(
                 _query.isEmpty ? 'Be the first to list one and start the chain.' : 'Try a different title or author.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.muted),
+                style: TextStyle(color: context.pal.muted),
               ),
             ]),
           ),
@@ -199,9 +231,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return [
       SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverGrid.builder(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 220,
             mainAxisSpacing: 16,
             crossAxisSpacing: 14,
@@ -216,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _BookCard extends StatelessWidget {
-  const _BookCard({required this.book, required this.books, required this.onTap});
+  _BookCard({required this.book, required this.books, required this.onTap});
 
   final BookSummary book;
   final BooksApi books;
@@ -234,32 +266,126 @@ class _BookCard extends StatelessWidget {
             title: book.title,
             imageUrl: book.coverPhotoUrl == null ? null : books.photoUrl(book.coverPhotoUrl!),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+              style: TextStyle(fontWeight: FontWeight.w600)),
           Text(
             [if (book.author != null) book.author!, book.condition.label].join(' · '),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12, color: AppColors.muted),
+            style: TextStyle(fontSize: 12, color: context.pal.muted),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: 2),
           Row(children: [
-            Text('₹${book.price}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+            Text('₹${book.price}', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             if (book.mrp != null) ...[
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text('₹${book.mrp}',
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.muted, decoration: TextDecoration.lineThrough)),
+                  style: TextStyle(
+                      fontSize: 12, color: context.pal.muted, decoration: TextDecoration.lineThrough)),
             ],
-            const Spacer(),
+            Spacer(),
             Flexible(
               child: Text(book.city,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                  style: TextStyle(fontSize: 11, color: context.pal.primary, fontWeight: FontWeight.w600)),
             ),
           ]),
         ],
+      ),
+    );
+  }
+}
+
+
+class _FiltersSheet extends StatefulWidget {
+  const _FiltersSheet({required this.books, required this.initial});
+
+  final BooksApi books;
+  final BrowseFilters initial;
+
+  @override
+  State<_FiltersSheet> createState() => _FiltersSheetState();
+}
+
+class _FiltersSheetState extends State<_FiltersSheet> {
+  static const _priceCaps = [100, 200, 300, 500];
+
+  late String? _city = widget.initial.city;
+  late BookCondition? _condition = widget.initial.condition;
+  late int? _maxPrice = widget.initial.maxPrice;
+  late BookSort _sort = widget.initial.sort;
+  List<String>? _cities;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.books.cities().then((c) {
+      if (mounted) setState(() => _cities = c);
+    }).catchError((Object _) {
+      if (mounted) setState(() => _cities = const []);
+    });
+  }
+
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Text(text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.pal.muted)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final cities = _cities;
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Filters', style: Theme.of(context).textTheme.titleLarge),
+          _label('City'),
+          if (cities == null)
+            const LinearProgressIndicator()
+          else
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              ChoiceChip(label: const Text('Anywhere'), selected: _city == null, onSelected: (_) => setState(() => _city = null)),
+              for (final c in cities)
+                ChoiceChip(label: Text(c), selected: _city == c, onSelected: (_) => setState(() => _city = c)),
+            ]),
+          _label('Condition'),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            ChoiceChip(label: const Text('Any'), selected: _condition == null, onSelected: (_) => setState(() => _condition = null)),
+            for (final c in BookCondition.values)
+              ChoiceChip(label: Text(c.label), selected: _condition == c, onSelected: (_) => setState(() => _condition = c)),
+          ]),
+          _label('Price'),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            ChoiceChip(label: const Text('Any'), selected: _maxPrice == null, onSelected: (_) => setState(() => _maxPrice = null)),
+            for (final p in _priceCaps)
+              ChoiceChip(label: Text('Under ₹$p'), selected: _maxPrice == p, onSelected: (_) => setState(() => _maxPrice = p)),
+          ]),
+          _label('Sort by'),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final s in BookSort.values)
+              ChoiceChip(label: Text(s.label), selected: _sort == s, onSelected: (_) => setState(() => _sort = s)),
+          ]),
+          const SizedBox(height: 24),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(const BrowseFilters()),
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                child: const Text('Clear all'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).pop(
+                  BrowseFilters(city: _city, condition: _condition, maxPrice: _maxPrice, sort: _sort),
+                ),
+                child: const Text('Show books'),
+              ),
+            ),
+          ]),
+        ]),
       ),
     );
   }

@@ -26,12 +26,12 @@ class BookCover extends StatelessWidget {
       width: double.infinity,
       color: _colors[title.hashCode.abs() % _colors.length],
       alignment: Alignment.bottomLeft,
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       child: Text(
         title,
         maxLines: 3,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15, height: 1.2),
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15, height: 1.2),
       ),
     );
 
@@ -48,7 +48,7 @@ class BookCover extends StatelessWidget {
               errorBuilder: (_, __, ___) => placeholder,
               loadingBuilder: (context, child, progress) => progress == null
                   ? child
-                  : Container(height: height, color: AppColors.border),
+                  : Container(height: height, color: context.pal.border),
             ),
     );
   }

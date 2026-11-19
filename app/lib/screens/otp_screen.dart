@@ -59,7 +59,7 @@ class _OtpScreenState extends State<OtpScreen> {
         _sent = sent;
         _error = null;
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('New code sent')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('New code sent')));
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } finally {
@@ -75,51 +75,51 @@ class _OtpScreenState extends State<OtpScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: BoxConstraints(maxWidth: 420),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('Enter the code', style: textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  Text('We sent it to ${_sent.email}', style: const TextStyle(color: AppColors.muted)),
+                  SizedBox(height: 8),
+                  Text('We sent it to ${_sent.email}', style: TextStyle(color: context.pal.muted)),
                   if (_sent.devCode == null) ...[
-                    const SizedBox(height: 4),
-                    const Text("Can't find it? Check your Spam or Promotions folder.",
-                        style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                    SizedBox(height: 4),
+                    Text("Can't find it? Check your Spam or Promotions folder.",
+                        style: TextStyle(color: context.pal.muted, fontSize: 13)),
                   ],
                   if (_sent.devCode != null) ...[
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.accentTint,
+                        color: context.pal.accentTint,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFF4D9A8)),
+                        border: Border.all(color: context.pal.accentBorder),
                       ),
                       child: Text(
                         'Test mode (no emails yet): your code is ${_sent.devCode}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   TextField(
                     controller: _otp,
                     autofocus: true,
                     keyboardType: TextInputType.number,
-                    autofillHints: const [AutofillHints.oneTimeCode],
+                    autofillHints: [AutofillHints.oneTimeCode],
                     maxLength: 6,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     onSubmitted: (_) => _verify(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 24, letterSpacing: 12, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 24, letterSpacing: 12, fontWeight: FontWeight.w700),
                     decoration: InputDecoration(counterText: '', hintText: '------', errorText: _error),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   BusyButton(label: 'Verify & continue', busy: _busy, onPressed: _verify),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   TextButton(
                     onPressed: _resending || _busy ? null : _resend,
                     child: Text(_resending ? 'Sending…' : "Didn't get it? Send again"),

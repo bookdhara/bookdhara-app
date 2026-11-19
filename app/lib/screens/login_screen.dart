@@ -53,27 +53,27 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: BoxConstraints(maxWidth: 420),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('BookDhara', style: textTheme.headlineMedium?.copyWith(color: AppColors.primary)),
-                  const SizedBox(height: 4),
-                  const Text('Kitaabein behti rahein.', style: TextStyle(color: AppColors.muted)),
-                  const SizedBox(height: 40),
+                  Text('BookDhara', style: textTheme.headlineMedium?.copyWith(color: context.pal.primary)),
+                  SizedBox(height: 4),
+                  Text('Kitaabein behti rahein.', style: TextStyle(color: context.pal.muted)),
+                  SizedBox(height: 40),
                   Text('Log in with your email', style: textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     "We'll email you a 6-digit code to verify it's you.",
-                    style: TextStyle(color: AppColors.muted),
+                    style: TextStyle(color: context.pal.muted),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   TextField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
+                    autofillHints: [AutofillHints.email],
                     autocorrect: false,
                     textInputAction: TextInputAction.go,
                     onSubmitted: (_) => _sendOtp(),
@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       errorText: _error,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   BusyButton(label: 'Send code', busy: _busy, onPressed: _sendOtp),
                 ],
               ),

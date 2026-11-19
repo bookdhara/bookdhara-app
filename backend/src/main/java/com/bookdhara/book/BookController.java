@@ -56,8 +56,16 @@ public class BookController {
     public List<BookSummary> browse(@AuthenticationPrincipal Long userId,
                                     @RequestParam(required = false) String q,
                                     @RequestParam(required = false) String city,
+                                    @RequestParam(required = false) BookEnums.Condition condition,
+                                    @RequestParam(required = false) Integer maxPrice,
+                                    @RequestParam(required = false) BookService.SortBy sort,
                                     @RequestParam(defaultValue = "0") int page) {
-        return service.browse(userId, q, city, page);
+        return service.browse(userId, new BookService.BrowseFilter(q, city, condition, maxPrice, sort), page);
+    }
+
+    @GetMapping("/api/books/cities")
+    public List<String> cities() {
+        return service.cities();
     }
 
     @GetMapping("/api/books/{id}")

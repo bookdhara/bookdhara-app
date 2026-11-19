@@ -99,6 +99,30 @@ class BookFlowTest {
     }
 
     @Test
+    void homeFiltersAndSorting() throws Exception {
+        createBook(seller, ATOMIC_HABITS);
+        createBook(seller, ATOMIC_HABITS.replace("Atomic Habits", "Dune").replace("\"price\":160", "\"price\":90")
+                .replace("GOOD", "LIKE_NEW").replace("Mumbai", "Pune").replace("978-1-84794-183-1", ""));
+
+        mvc.perform(get("/api/books").param("condition", "LIKE_NEW").header("Authorization", buyer))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Dune"));
+        mvc.perform(get("/api/books").param("maxPrice", "100").header("Authorization", buyer))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Dune"));
+        mvc.perform(get("/api/books").param("sort", "PRICE_LOW").header("Authorization", buyer))
+                .andExpect(jsonPath("$[0].title").value("Dune"))
+                .andExpect(jsonPath("$[1].title").value("Atomic Habits"));
+        mvc.perform(get("/api/books").param("sort", "PRICE_HIGH").header("Authorization", buyer))
+                .andExpect(jsonPath("$[0].title").value("Atomic Habits"));
+        mvc.perform(get("/api/books/cities").header("Authorization", buyer))
+                .andExpect(jsonPath("$[0]").value("Mumbai"))
+                .andExpect(jsonPath("$[1]").value("Pune"));
+        mvc.perform(get("/api/books").param("condition", "SHINY").header("Authorization", buyer))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void photosCanBeAddedByTheSellerAndViewedPublicly() throws Exception {
         long id = createBook(seller, ATOMIC_HABITS);
         byte[] jpeg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x01, 0x02};
