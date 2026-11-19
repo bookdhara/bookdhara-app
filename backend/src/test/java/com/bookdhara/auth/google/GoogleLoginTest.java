@@ -150,7 +150,8 @@ class GoogleLoginTest {
     }
 
     private JsonNode me(String token) throws Exception {
-        String body = mvc.perform(get("/api/me").header("Authorization", "Bearer " + token))
+        String header = token.startsWith("Bearer ") ? token : "Bearer " + token;
+        String body = mvc.perform(get("/api/me").header("Authorization", header))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         return json.readTree(body);
