@@ -53,6 +53,8 @@ class BookFlowTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        jdbc.update("DELETE FROM credit_entries");
+        jdbc.update("DELETE FROM orders");
         jdbc.update("DELETE FROM book_photos");
         jdbc.update("DELETE FROM books");
         jdbc.update("DELETE FROM otp_codes");
