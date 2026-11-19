@@ -25,5 +25,8 @@ bookdhara:
     brevo-api-key: ""
     sender-email: test@example.com
     sender-name: BookDhara
+  rate-limit:
+    code-requests: 1000
+    login-attempts: 1000
   cors:
     allowed-origins: http://localhost:3000

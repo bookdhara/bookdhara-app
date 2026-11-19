@@ -92,6 +92,21 @@ class ProfileScreen extends StatelessWidget {
                 )),
               ),
               const SizedBox(height: 8),
+              _Section('Security'),
+              ListTile(
+                leading: const Icon(Icons.lock_outline),
+                title: Text(user?.hasPassword == true ? 'Change password' : 'Set a password'),
+                subtitle: Text(user?.hasPassword == true
+                    ? 'You can log in with email + password'
+                    : 'Log in faster, without an email code'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (_) => _PasswordSheet(auth: auth),
+                ),
+              ),
+              const SizedBox(height: 8),
               _Section('Appearance'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -241,6 +256,86 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   child: CircularProgressIndicator(strokeWidth: 2.5, color: context.pal.onPrimary))
               : const Text('Save'),
         ),
+      ]),
+    );
+  }
+}
+
+
+class _PasswordSheet extends StatefulWidget {
+  const _PasswordSheet({required this.auth});
+
+  final AuthStore auth;
+
+  @override
+  State<_PasswordSheet> createState() => _PasswordSheetState();
+}
+
+class _PasswordSheetState extends State<_PasswordSheet> {
+  final _current = TextEditingController();
+  final _next = TextEditingController();
+  String? _error;
+  bool _busy = false;
+
+  bool get _changing => widget.auth.user?.hasPassword == true;
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _next.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_next.text.length < 8) {
+      setState(() => _error = 'Use at least 8 characters');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.auth.setPassword(current: _changing ? _current.text : null, newPassword: _next.text);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password saved')));
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(_changing ? 'Change password' : 'Set a password', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        if (_changing) ...[
+          TextField(
+            controller: _current,
+            obscureText: true,
+            autofillHints: const [AutofillHints.password],
+            decoration: const InputDecoration(labelText: 'Current password'),
+          ),
+          const SizedBox(height: 12),
+        ],
+        TextField(
+          controller: _next,
+          obscureText: true,
+          autofillHints: const [AutofillHints.newPassword],
+          decoration: const InputDecoration(labelText: 'New password', helperText: 'At least 8 characters'),
+        ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(_error!, style: TextStyle(color: context.pal.danger)),
+          ),
+        const SizedBox(height: 16),
+        FilledButton(onPressed: _busy ? null : _save, child: Text(_busy ? 'Saving…' : 'Save password')),
       ]),
     );
   }

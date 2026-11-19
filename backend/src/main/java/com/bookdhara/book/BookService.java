@@ -134,11 +134,25 @@ public class BookService {
         if (data.length == 0 || data.length > MAX_PHOTO_BYTES) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "PHOTO_SIZE", "Each photo must be under 2 MB.");
         }
+        if (!looksLike(contentType, data)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "PHOTO_TYPE", "That file isn't a real JPG, PNG or WebP photo.");
+        }
         long existing = photos.countByBookId(book.getId());
         if (existing >= MAX_PHOTOS) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "PHOTO_LIMIT", "You can add up to 3 photos.");
         }
         return photos.save(new BookPhoto(book.getId(), (int) existing, contentType, data, clock.instant()));
+    }
+
+    /** Checks the file's first bytes, so a non-image can't be uploaded under an image name. */
+    static boolean looksLike(String contentType, byte[] d) {
+        return switch (contentType) {
+            case "image/jpeg" -> d.length > 3 && (d[0] & 0xFF) == 0xFF && (d[1] & 0xFF) == 0xD8 && (d[2] & 0xFF) == 0xFF;
+            case "image/png" -> d.length > 8 && (d[0] & 0xFF) == 0x89 && d[1] == 'P' && d[2] == 'N' && d[3] == 'G';
+            case "image/webp" -> d.length > 12 && d[0] == 'R' && d[1] == 'I' && d[2] == 'F' && d[3] == 'F'
+                    && d[8] == 'W' && d[9] == 'E' && d[10] == 'B' && d[11] == 'P';
+            default -> false;
+        };
     }
 
     @Transactional(readOnly = true)

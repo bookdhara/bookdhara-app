@@ -17,12 +17,14 @@ class NameScreen extends StatefulWidget {
 
 class _NameScreenState extends State<NameScreen> {
   final _name = TextEditingController();
+  final _password = TextEditingController();
   String? _error;
   bool _busy = false;
 
   @override
   void dispose() {
     _name.dispose();
+    _password.dispose();
     super.dispose();
   }
 
@@ -32,11 +34,18 @@ class _NameScreenState extends State<NameScreen> {
       setState(() => _error = 'Enter your name');
       return;
     }
+    final password = _password.text;
+    if (password.isNotEmpty && password.length < 8) {
+      setState(() => _error = 'Password: use at least 8 characters, or leave it empty');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
+      // Password first: saving the name moves the app on to Home.
+      if (password.isNotEmpty) await widget.auth.setPassword(newPassword: password);
       await widget.auth.saveName(name);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -72,7 +81,20 @@ class _NameScreenState extends State<NameScreen> {
                     autofillHints: [AutofillHints.name],
                     maxLength: 80,
                     onSubmitted: (_) => _save(),
-                    decoration: InputDecoration(labelText: 'Your name', counterText: '', errorText: _error),
+                    decoration: InputDecoration(labelText: 'Your name', counterText: ''),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _password,
+                    obscureText: true,
+                    autofillHints: const [AutofillHints.newPassword],
+                    onSubmitted: (_) => _save(),
+                    decoration: InputDecoration(
+                      labelText: 'Create a password (optional)',
+                      helperText: 'Log in faster next time, without an email code',
+                      errorText: _error,
+                      errorMaxLines: 2,
+                    ),
                   ),
                   SizedBox(height: 20),
                   BusyButton(label: 'Continue', busy: _busy, onPressed: _save),

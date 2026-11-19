@@ -23,6 +23,10 @@ public class JwtService {
         if (properties.secret() == null || properties.secret().length() < 32) {
             throw new IllegalStateException("bookdhara.jwt.secret (JWT_SECRET) must be at least 32 characters");
         }
+        // Render sets RENDER=true. Never run the live server with the public development secret.
+        if (System.getenv("RENDER") != null && properties.secret().startsWith("dev-only-secret")) {
+            throw new IllegalStateException("Set a real JWT_SECRET on Render; the development default is public");
+        }
         this.key = Keys.hmacShaKeyFor(properties.secret().getBytes(StandardCharsets.UTF_8));
         this.properties = properties;
         this.clock = clock;
