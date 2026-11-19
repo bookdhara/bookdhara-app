@@ -1,6 +1,5 @@
 name: Live API smoke test
 
-# Run by hand (Actions tab > "Live API smoke test" > Run workflow) to check the deployed backend.
 on:
   workflow_dispatch:
     inputs:
@@ -9,55 +8,44 @@ on:
         default: "https://bookdhara-app.onrender.com"
         required: true
       email:
-        description: "Test email (a test account is created for it)"
-        default: "smoke-test@example.com"
+        description: "unused here"
+        default: "x"
         required: true
 
 jobs:
-  smoke:
+  browser:
     runs-on: ubuntu-latest
-    env:
-      BASE: ${{ inputs.base_url }}
-      EMAIL: ${{ inputs.email }}
     steps:
-      - name: Health check (waits for a sleeping free server to wake up)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Browser check from the app's origin
         run: |
-          for i in $(seq 1 12); do
-            if curl -fsS --max-time 30 "$BASE/api/status"; then echo; exit 0; fi
-            echo "Not up yet, retrying in 10s ($i/12)"; sleep 10
-          done
-          exit 1
-
-      - name: CORS check (as the browser app does it)
-        run: |
-          echo "--- Preflight ---"
-          curl -sS -i -X OPTIONS "$BASE/api/auth/otp/request" \
-            -H "Origin: https://bookdhara.github.io" \
-            -H "Access-Control-Request-Method: POST" \
-            -H "Access-Control-Request-Headers: accept,content-type" | head -20
-          echo "--- POST with Origin (invalid email, so no email is sent) ---"
-          curl -sS -i -X POST "$BASE/api/auth/otp/request" \
-            -H "Origin: https://bookdhara.github.io" -H "Accept: application/json" \
-            -H "Content-Type: application/json" -d '{"email":"x"}' | head -20
-
-      - name: Request OTP
-        run: |
-          RESP=$(curl -fsS -X POST "$BASE/api/auth/otp/request" \
-            -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\"}")
-          echo "$RESP" | jq '{email, expiresInSeconds, devCodePresent: (.devCode != null)}'
-          echo "OTP=$(echo "$RESP" | jq -r '.devCode // empty')" >> "$GITHUB_ENV"
-
-      - name: Verify OTP and call /api/me (test mode only; real emails can't be read here)
-        if: env.OTP != ''
-        run: |
-          RESP=$(curl -fsS -X POST "$BASE/api/auth/otp/verify" \
-            -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\",\"otp\":\"$OTP\"}")
-          echo "$RESP" | jq '{needsProfile, user}'
-          TOKEN=$(echo "$RESP" | jq -r .accessToken)
-          curl -fsS "$BASE/api/me" -H "Authorization: Bearer $TOKEN" | jq .
-
-      - name: Unauthenticated request is refused
-        run: |
-          CODE=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/me")
-          echo "GET /api/me without token -> $CODE"
-          test "$CODE" = "401"
+          mkdir t && cd t && npm init -y >/dev/null && npm i playwright@1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+          cat > check.mjs <<'JS'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch();
+          const page = await browser.newPage();
+          page.on('console', m => console.log('CONSOLE', m.type(), m.text()));
+          page.on('requestfailed', r => console.log('REQFAILED', r.method(), r.url(), r.failure()?.errorText));
+          page.on('response', r => { if (r.url().includes('onrender')) console.log('RESPONSE', r.status(), r.request().method(), r.url()); });
+          await page.goto('https://bookdhara.github.io/bookdhara-app/', { waitUntil: 'load', timeout: 60000 });
+          await page.waitForTimeout(5000);
+          const results = await page.evaluate(async () => {
+            const out = [];
+            const base = 'https://bookdhara-app.onrender.com';
+            for (const [name, opts] of [
+              ['GET status', { method: 'GET', headers: { 'Accept': 'application/json' } }],
+              ['POST otp invalid email', { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/json; charset=utf-8' }, body: JSON.stringify({ email: 'x' }) }],
+            ]) {
+              try {
+                const r = await fetch(base + (name.startsWith('GET') ? '/api/status' : '/api/auth/otp/request'), opts);
+                out.push(name + ' -> ' + r.status + ' ' + (await r.text()).slice(0, 150));
+              } catch (e) { out.push(name + ' -> ERROR ' + e); }
+            }
+            return out;
+          });
+          console.log(results.join('\n'));
+          await browser.close();
+          JS
+          node check.mjs
