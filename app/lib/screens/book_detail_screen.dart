@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../books/book_models.dart';
 import '../books/books_api.dart';
+import '../orders/orders_api.dart';
 import '../theme.dart';
 import '../widgets/book_cover.dart';
+import 'checkout_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
   const BookDetailScreen({super.key, required this.books, required this.bookId});
@@ -200,8 +202,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               )
             : FilledButton(
                 onPressed: book.isAvailable
-                    ? () => ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Buying opens in the next update')))
+                    ? () => Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => CheckoutScreen(orders: OrdersApi(widget.books.api), book: book),
+                        ))
                     : null,
                 child: Text(book.isAvailable ? 'Buy for ₹${book.price}' : 'No longer available'),
               ),

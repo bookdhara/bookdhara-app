@@ -29,7 +29,7 @@ class AboutScreen extends StatelessWidget {
             'to keep good books in circulation instead of on dusty shelves.'),
         _Block.heading('Contact'),
         _Block.text('Questions, ideas or a problem with an order? Write to us at $_contactEmail.'),
-        _Block.note('BookDhara is in early testing. Buying and payments are not open yet.'),
+        _Block.note('BookDhara is in early testing. Payments run in test mode: no real money is charged yet.'),
       ],
     );
   }
