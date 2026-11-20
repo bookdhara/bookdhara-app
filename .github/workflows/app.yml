@@ -41,7 +41,7 @@ jobs:
       - name: Build web app
         run: flutter build web --release --base-href /bookdhara-app/
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         if: github.event_name != 'pull_request'
         with:
           path: app/build/web
