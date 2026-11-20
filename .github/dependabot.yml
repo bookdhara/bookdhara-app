@@ -1,4 +1,6 @@
 # Opens PRs when a library we use has a newer (often security-fixing) version.
+# Small (minor/patch) updates come bundled in one PR per area. Big rewrites that need
+# code changes (Spring Boot 4, google_fonts 7+) are skipped until we upgrade on purpose.
 version: 2
 updates:
   - package-ecosystem: gradle
@@ -6,12 +8,27 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "org.springframework.boot"
+        update-types: ["version-update:semver-major"]
+    groups:
+      backend-small-updates:
+        update-types: ["minor", "patch"]
   - package-ecosystem: pub
     directory: /app
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "google_fonts"
+        update-types: ["version-update:semver-major"]
+    groups:
+      app-small-updates:
+        update-types: ["minor", "patch"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
