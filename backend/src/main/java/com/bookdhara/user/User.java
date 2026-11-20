@@ -41,6 +41,10 @@ public class User {
     @Column(name = "locked_until")
     private Instant lockedUntil;
 
+    /** Google's id for this person; null until they sign in with Google. */
+    @Column(name = "google_sub", unique = true, length = 255)
+    private String googleSub;
+
     protected User() {
         // for JPA
     }
@@ -105,6 +109,14 @@ public class User {
             lockedUntil = now.plus(lockFor);
             failedLogins = 0;
         }
+    }
+
+    public String getGoogleSub() {
+        return googleSub;
+    }
+
+    public void setGoogleSub(String googleSub) {
+        this.googleSub = googleSub;
     }
 
     public void recordSuccessfulLogin() {

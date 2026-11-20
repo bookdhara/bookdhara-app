@@ -27,6 +27,43 @@
 </head>
 <body>
   <div id="loading">BookDhara</div>
+  <!-- Google's sign-in library, used only by the "Continue with Google" button. -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    // Called from Dart (lib/auth/google_button_web.dart).
+    window.bookdharaGoogle = {
+      render: function (el, clientId, onCredential, theme) {
+        el.style.width = '100%';
+        el.style.height = '100%';
+        el.style.display = 'flex';
+        el.style.justifyContent = 'center';
+        el.style.alignItems = 'center';
+        var tries = 0;
+        function draw() {
+          var ready = window.google && google.accounts && google.accounts.id;
+          // Wait for the library to load and for Flutter to put the box on the page.
+          if (!ready || !el.isConnected || el.offsetWidth === 0) {
+            if (++tries < 300) setTimeout(draw, 100);
+            return;
+          }
+          google.accounts.id.initialize({
+            client_id: clientId,
+            callback: function (response) { onCredential(response.credential); },
+            ux_mode: 'popup',
+            auto_select: false,
+            cancel_on_tap_outside: true
+          });
+          el.innerHTML = '';
+          google.accounts.id.renderButton(el, {
+            type: 'standard', theme: theme, size: 'large', text: 'continue_with',
+            shape: 'pill', logo_alignment: 'center',
+            width: Math.min(Math.max(el.offsetWidth, 200), 400)
+          });
+        }
+        draw();
+      }
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

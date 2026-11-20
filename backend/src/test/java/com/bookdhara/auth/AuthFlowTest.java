@@ -41,6 +41,17 @@ class AuthFlowTest {
     }
 
     @Test
+    void googleSignInIsOffUntilAClientIdIsSet() throws Exception {
+        mvc.perform(get("/api/auth/providers"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.googleClientId").doesNotExist());
+        mvc.perform(post("/api/auth/google").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"credential\":\"x.y.z\"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("GOOGLE_DISABLED"));
+    }
+
+    @Test
     void newUserCanLogInWithOtpAndSetName() throws Exception {
         String otp = requestOtp("  Riya.S@Example.com ");
 

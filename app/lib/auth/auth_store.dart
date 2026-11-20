@@ -94,6 +94,18 @@ class AuthStore extends ChangeNotifier {
     await _loggedIn(await api.post('/api/auth/otp/verify', {'email': email, 'otp': otp}));
   }
 
+  /// The Google sign-in client id, or null while Google sign-in isn't set up on the server.
+  Future<String?> googleClientId() async {
+    final data = await api.get('/api/auth/providers');
+    final id = data['googleClientId'] as String?;
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
+  /// [credential] is the ID token Google's button hands us; the server checks it with Google.
+  Future<void> loginWithGoogle(String credential) async {
+    await _loggedIn(await api.post('/api/auth/google', {'credential': credential}));
+  }
+
   Future<void> loginWithPassword(String email, String password) async {
     await _loggedIn(await api.post('/api/auth/login', {'email': email.trim(), 'password': password}));
   }
