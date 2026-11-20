@@ -12,6 +12,10 @@ on:
         description: "Test email (a test account is created for it)"
         default: "smoke-test@example.com"
         required: true
+      send_code:
+        description: "Also request a login code (sends a real email when Brevo is on)"
+        type: boolean
+        default: true
 
 jobs:
   smoke:
@@ -28,7 +32,15 @@ jobs:
           done
           exit 1
 
+      - name: Login options (Google sign-in on?) and public pages
+        run: |
+          curl -fsS "$BASE/api/auth/providers" | jq '{googleSignIn: (.googleClientId != null), clientIdEnding: ((.googleClientId // "") | .[-27:])}'
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' https://bookdhara.github.io/bookdhara-app/privacy.html)
+          echo "privacy.html -> $CODE"
+          test "$CODE" = "200"
+
       - name: Request OTP
+        if: inputs.send_code
         run: |
           RESP=$(curl -fsS -X POST "$BASE/api/auth/otp/request" \
             -H 'Content-Type: application/json' -d "{\"email\":\"$EMAIL\"}")
