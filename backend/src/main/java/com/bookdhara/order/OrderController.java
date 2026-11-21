@@ -49,6 +49,12 @@ public class OrderController {
         return service.mine(userId, role);
     }
 
+    /** Orders waiting for me to do something; the app shows these as an alert. */
+    @GetMapping("/attention")
+    public List<OrderView> attention(@AuthenticationPrincipal Long userId) {
+        return service.needingAttention(userId);
+    }
+
     @GetMapping("/{id}")
     public OrderView get(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
         return service.get(id, userId);

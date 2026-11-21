@@ -1,5 +1,8 @@
 package com.bookdhara.order;
 
+import com.bookdhara.notify.OrderEvent;
+import org.springframework.context.ApplicationEventPublisher;
+
 import com.bookdhara.auth.PhoneNumbers;
 import com.bookdhara.book.Book;
 import com.bookdhara.book.BookEnums.Status;
@@ -48,16 +51,34 @@ public class OrderService {
     private final UserRepository users;
     private final WalletService wallet;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
     private final SecureRandom random = new SecureRandom();
 
     public OrderService(OrderRepository orders, BookRepository books, BookPhotoRepository photos,
-                        UserRepository users, WalletService wallet, Clock clock) {
+                        UserRepository users, WalletService wallet, Clock clock, ApplicationEventPublisher events) {
         this.orders = orders;
         this.books = books;
         this.photos = photos;
         this.users = users;
         this.wallet = wallet;
         this.clock = clock;
+        this.events = events;
+    }
+
+    /** Orders waiting for this person: sellers must hand over or ship, buyers must confirm delivery. */
+    @Transactional(readOnly = true)
+    public List<OrderView> needingAttention(Long userId) {
+        List<Order> list = new java.util.ArrayList<>(
+                orders.findBySellerIdAndStatusOrderByCreatedAtDesc(userId, Order.Status.PLACED));
+        list.addAll(orders.findByBuyerIdAndStatusOrderByCreatedAtDesc(userId, Order.Status.SHIPPED));
+        Map<Long, String> covers = coverUrls(list.stream().map(o -> o.getBook().getId()).toList());
+        return list.stream().map(o -> view(o, userId, covers)).toList();
+    }
+
+    /** Emails the other person once this transaction commits. */
+    private void tell(OrderEvent.Type type, Order o, User to, User other, String note) {
+        events.publishEvent(new OrderEvent(type, o.getId(), to.getEmail(), to.getName(), other.getName(),
+                o.getBook().getTitle(), o.getDeliveryMethod() == DeliveryMethod.PICKUP, note));
     }
 
     @Transactional(readOnly = true)
@@ -115,6 +136,7 @@ public class OrderService {
         order = orders.save(order);
         book.changeStatus(Status.RESERVED, now);
         wallet.record(buyerId, -r.creditsToUse(), Kind.PURCHASE, order.getId(), "Bought " + book.getTitle());
+        tell(OrderEvent.Type.NEW_ORDER, order, book.getSeller(), buyer, null);
         return view(order, buyerId);
     }
 
@@ -140,7 +162,9 @@ public class OrderService {
         if (o.getDeliveryMethod() != DeliveryMethod.SHIPPING || o.getStatus() != Order.Status.PLACED) {
             throw invalidStep();
         }
-        o.markShipped(note == null || note.isBlank() ? null : note.trim(), clock.instant());
+        String cleanNote = note == null || note.isBlank() ? null : note.trim();
+        o.markShipped(cleanNote, clock.instant());
+        tell(OrderEvent.Type.SHIPPED, o, o.getBuyer(), o.getSeller(), cleanNote);
         return view(o, userId);
     }
 
@@ -187,6 +211,8 @@ public class OrderService {
         boolean byBuyer = o.getBuyer().getId().equals(userId);
         o.cancel((byBuyer ? "Cancelled by buyer" : "Cancelled by seller")
                 + (reason == null || reason.isBlank() ? "" : ": " + reason.trim()), now);
+        tell(OrderEvent.Type.CANCELLED, o, byBuyer ? o.getSeller() : o.getBuyer(),
+                byBuyer ? o.getBuyer() : o.getSeller(), reason == null || reason.isBlank() ? null : reason.trim());
         o.getBook().changeStatus(Status.AVAILABLE, now);
         wallet.record(o.getBuyer().getId(), o.getCreditsUsed(), Kind.REFUND, o.getId(),
                 "Refund for " + o.getBook().getTitle());
@@ -196,6 +222,7 @@ public class OrderService {
     private void complete(Order o) {
         Instant now = clock.instant();
         o.complete(now);
+        tell(OrderEvent.Type.COMPLETED, o, o.getSeller(), o.getBuyer(), null);
         o.getBook().changeStatus(Status.SOLD, now);
         if (o.getSellerPayout() == com.bookdhara.book.BookEnums.Payout.CREDITS) {
             wallet.record(o.getSeller().getId(), o.getSellerPayoutAmount(), Kind.SALE, o.getId(),

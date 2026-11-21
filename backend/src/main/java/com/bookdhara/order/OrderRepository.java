@@ -13,6 +13,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findBySellerIdOrderByCreatedAtDesc(Long sellerId);
 
+    List<Order> findBySellerIdAndStatusOrderByCreatedAtDesc(Long sellerId, Order.Status status);
+
+    List<Order> findByBuyerIdAndStatusOrderByCreatedAtDesc(Long buyerId, Order.Status status);
+
     /** Credits a seller will get once their open orders complete. */
     @Query("""
             SELECT COALESCE(SUM(o.sellerPayoutAmount), 0) FROM Order o

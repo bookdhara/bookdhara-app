@@ -1,13 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_client.dart';
 import '../auth/auth_store.dart';
 import '../books/book_models.dart';
 import '../books/books_api.dart';
+import '../orders/order_models.dart';
+import '../orders/orders_api.dart';
 import '../theme.dart';
 import '../widgets/book_cover.dart';
 import '../settings/app_settings.dart';
 import 'book_detail_screen.dart';
+import 'my_orders_screen.dart';
+import 'order_detail_screen.dart';
 import 'profile_screen.dart';
 import 'sell_screen.dart';
 
@@ -22,8 +29,15 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  static const _alertedKey = 'alerted_orders';
+  static const _checkEvery = Duration(seconds: 60);
+
   final _search = TextEditingController();
+  late final OrdersApi _orders = OrdersApi(widget.books.api);
+  List<OrderView> _attention = const [];
+  Timer? _ordersTimer;
+  bool _checking = false;
   List<BookSummary>? _items;
   String? _error;
   String _query = '';
@@ -32,13 +46,84 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
+    _checkOrders();
+    _ordersTimer = Timer.periodic(_checkEvery, (_) => _checkOrders());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _ordersTimer?.cancel();
     _search.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _checkOrders();
+  }
+
+  /// Looks for orders waiting on me. Something new pops up once; the banner stays until it's done.
+  Future<void> _checkOrders() async {
+    if (_checking) return;
+    _checking = true;
+    try {
+      final list = await _orders.attention();
+      if (!mounted) return;
+      setState(() => _attention = list);
+
+      final prefs = await SharedPreferences.getInstance();
+      final alerted = prefs.getStringList(_alertedKey) ?? <String>[];
+      final fresh = list.where((o) => !alerted.contains(_alertKey(o))).toList();
+      // Only pop up when Home is on screen; otherwise wait until the person comes back.
+      if (fresh.isEmpty || !mounted || ModalRoute.of(context)?.isCurrent != true) return;
+
+      final updated = [...alerted, ...fresh.map(_alertKey)];
+      await prefs.setStringList(_alertedKey, updated.length > 200 ? updated.sublist(updated.length - 200) : updated);
+      if (mounted) await _showOrderPopup(fresh);
+    } catch (_) {
+      // Server asleep or offline: try again next time.
+    } finally {
+      _checking = false;
+    }
+  }
+
+  static String _alertKey(OrderView o) => '${o.id}:${o.status.api}';
+
+  Future<void> _showOrderPopup(List<OrderView> fresh) async {
+    final first = fresh.first;
+    final more = fresh.length - 1;
+    final open = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Text(first.isBuyer ? '🚚' : '🎉', style: const TextStyle(fontSize: 40)),
+        title: Text(first.isBuyer ? 'Your book is on its way' : 'Your book sold!'),
+        content: Text(first.nextStep + (more > 0 ? '\n\n+ $more more ${more == 1 ? 'order needs' : 'orders need'} you.' : '')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Later')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('View order')),
+        ],
+      ),
+    );
+    if (open == true && mounted) await _openOrder(first);
+  }
+
+  Future<void> _openOrder(OrderView o) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => OrderDetailScreen(orders: _orders, orderId: o.id),
+    ));
+    _checkOrders();
+  }
+
+  Future<void> _openAttention() async {
+    if (_attention.length == 1) {
+      await _openOrder(_attention.first);
+      return;
+    }
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MyOrdersScreen(orders: _orders)));
+    _checkOrders();
   }
 
   Future<void> _load() async {
@@ -101,10 +186,16 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             tooltip: 'Profile',
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => ProfileScreen(auth: widget.auth, books: widget.books, settings: widget.settings),
-            )),
-            icon: CircleAvatar(
+            onPressed: () async {
+              await Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => ProfileScreen(auth: widget.auth, books: widget.books, settings: widget.settings),
+              ));
+              _checkOrders();
+            },
+            icon: Badge(
+              isLabelVisible: _attention.isNotEmpty,
+              label: Text('${_attention.length}'),
+              child: CircleAvatar(
               radius: 16,
               backgroundColor: context.pal.primaryTint,
               foregroundColor: context.pal.primary,
@@ -112,6 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 firstName.isEmpty ? '?' : firstName.characters.first.toUpperCase(),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
+            ),
             ),
           ),
           SizedBox(width: 8),
@@ -133,6 +225,10 @@ class _HomeScreenState extends State<HomeScreen> {
               sliver: SliverList.list(children: [
                 Text('Hi $firstName 👋', style: textTheme.titleLarge),
                 SizedBox(height: 14),
+                if (_attention.isNotEmpty) ...[
+                  _AttentionBanner(orders: _attention, onTap: _openAttention),
+                  const SizedBox(height: 14),
+                ],
                 TextField(
                   controller: _search,
                   textInputAction: TextInputAction.search,
@@ -386,6 +482,49 @@ class _FiltersSheetState extends State<_FiltersSheet> {
             ),
           ]),
         ]),
+      ),
+    );
+  }
+}
+
+
+/// Stays on Home while any order is waiting for me.
+class _AttentionBanner extends StatelessWidget {
+  const _AttentionBanner({required this.orders, required this.onTap});
+
+  final List<OrderView> orders;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final one = orders.length == 1;
+    return Material(
+      color: context.pal.primary,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(children: [
+            const Text('📦', style: TextStyle(fontSize: 28)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  one ? 'An order needs you' : '${orders.length} orders need you',
+                  style: TextStyle(color: context.pal.onPrimary, fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  one ? orders.first.nextStep : 'Tap to see them in My orders.',
+                  style: TextStyle(color: context.pal.onPrimary),
+                ),
+              ]),
+            ),
+            Icon(Icons.chevron_right, color: context.pal.onPrimary),
+          ]),
+        ),
       ),
     );
   }
