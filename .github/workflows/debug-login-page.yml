@@ -1,6 +1,7 @@
 name: Debug login page (temporary)
 on:
-  workflow_dispatch:
+  push:
+    branches: [debug/google-button]
 jobs:
   look:
     runs-on: ubuntu-latest
