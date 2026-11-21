@@ -29,10 +29,20 @@ public class MeController {
 
     private final UserRepository users;
     private final PasswordService passwords;
+    private final com.bookdhara.safety.AccountDeletionService deletion;
 
-    public MeController(UserRepository users, PasswordService passwords) {
+    public MeController(UserRepository users, PasswordService passwords,
+                        com.bookdhara.safety.AccountDeletionService deletion) {
         this.users = users;
         this.passwords = passwords;
+        this.deletion = deletion;
+    }
+
+    /** Permanently deletes the account. The app asks the person to confirm first. */
+    @org.springframework.web.bind.annotation.DeleteMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccount(@AuthenticationPrincipal Long userId) {
+        deletion.delete(userId);
     }
 
     /** Set a password (or change it: then the current one is required). */

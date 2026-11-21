@@ -19,6 +19,8 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
 
     List<Book> findBySellerIdAndStatusNotOrderByCreatedAtDesc(Long sellerId, Status status);
 
+    List<Book> findBySellerIdAndStatus(Long sellerId, Status status);
+
     @Query("SELECT DISTINCT b.city FROM Book b WHERE b.status = com.bookdhara.book.BookEnums.Status.AVAILABLE ORDER BY b.city")
     List<String> findAvailableCities();
 }

@@ -32,9 +32,11 @@ public class ChatService {
     private final OrderMessageRepository messages;
     private final ApplicationEventPublisher events;
     private final Clock clock;
+    private final com.bookdhara.safety.BlockService blocks;
 
     public ChatService(OrderRepository orders, OrderMessageRepository messages,
-                       ApplicationEventPublisher events, Clock clock) {
+                       ApplicationEventPublisher events, Clock clock, com.bookdhara.safety.BlockService blocks) {
+        this.blocks = blocks;
         this.orders = orders;
         this.messages = messages;
         this.events = events;
@@ -59,6 +61,7 @@ public class ChatService {
         if (!o.isOpen()) {
             throw new ApiException(HttpStatus.CONFLICT, "CHAT_CLOSED", "This order is closed, so the chat is read-only.");
         }
+        blocks.requireNotBlocked(userId, other(o, userId).getId(), "You can't message this person.");
         String body = clean(rawBody);
         if (body.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "EMPTY_MESSAGE", "Type a message first.");

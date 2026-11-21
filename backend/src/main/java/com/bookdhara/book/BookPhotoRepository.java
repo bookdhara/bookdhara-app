@@ -9,6 +9,10 @@ import java.util.List;
 
 public interface BookPhotoRepository extends JpaRepository<BookPhoto, Long> {
 
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM BookPhoto p WHERE p.bookId IN :bookIds")
+    int deleteByBookIds(@org.springframework.data.repository.query.Param("bookIds") java.util.Collection<Long> bookIds);
+
     /** Photo ids only (without the image bytes), in display order. */
     interface PhotoRef {
         Long getId();
