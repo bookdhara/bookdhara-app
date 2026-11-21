@@ -64,6 +64,20 @@
       }
     };
   </script>
+  <script>
+    // Clean up the service worker older versions installed, plus its saved copy of the app,
+    // so everyone gets the latest version on the next visit.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.unregister(); });
+      }).catch(function () {});
+    }
+    if (window.caches && caches.keys) {
+      caches.keys().then(function (keys) {
+        keys.forEach(function (k) { if (k.indexOf('flutter') === 0) caches.delete(k); });
+      }).catch(function () {});
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
