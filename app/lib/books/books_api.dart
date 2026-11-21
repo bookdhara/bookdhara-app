@@ -106,6 +106,25 @@ class BooksApi {
     return items.map((e) => BookSummary.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  Future<void> save(int bookId) async => api.put('/api/me/wishlist/$bookId');
+
+  Future<void> unsave(int bookId) async => api.delete('/api/me/wishlist/$bookId');
+
+  Future<List<BookSummary>> saved() async {
+    final items = await api.getList('/api/me/wishlist');
+    return items.map((e) => BookSummary.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<BookAlert>> alerts() async {
+    final items = await api.getList('/api/me/alerts');
+    return items.map((e) => BookAlert.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<BookAlert> addAlert(String query, {String? city}) async =>
+      BookAlert.fromJson(await api.post('/api/me/alerts', {'query': query, if (city != null) 'city': city}));
+
+  Future<void> removeAlert(int id) async => api.delete('/api/me/alerts/$id');
+
   Future<BookDetail> detail(int id) async => BookDetail.fromJson(await api.get('/api/books/$id'));
 
   Future<IsbnInfo> lookupIsbn(String isbn) async {
@@ -121,4 +140,17 @@ class BooksApi {
   Future<void> remove(int bookId) => api.delete('/api/books/$bookId');
 
   String photoUrl(String path) => api.url(path);
+}
+
+
+/// "Tell me when a book like this is listed."
+class BookAlert {
+  BookAlert.fromJson(Map<String, dynamic> j)
+      : id = (j['id'] as num).toInt(),
+        query = j['query'] as String,
+        city = j['city'] as String?;
+
+  final int id;
+  final String query;
+  final String? city;
 }

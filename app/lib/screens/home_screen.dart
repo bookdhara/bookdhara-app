@@ -7,6 +7,7 @@ import '../api/api_client.dart';
 import '../auth/auth_store.dart';
 import '../books/book_models.dart';
 import '../books/books_api.dart';
+import '../deep_links.dart';
 import '../orders/order_models.dart';
 import '../orders/orders_api.dart';
 import '../theme.dart';
@@ -50,6 +51,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _load();
     _checkOrders();
     _ordersTimer = Timer.periodic(_checkEvery, (_) => _checkOrders());
+    final linkedBook = DeepLinks.takeBookId();
+    if (linkedBook != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => BookDetailScreen(books: widget.books, bookId: linkedBook),
+        ));
+      });
+    }
+  }
+
+  Future<void> _alertMe() async {
+    try {
+      await widget.books.addAlert(_query, city: _filters.city);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Done! We'll email you when \"$_query\" is listed${_filters.city == null ? '' : ' in ${_filters.city}'}."),
+      ));
+    } on ApiException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -323,6 +345,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 textAlign: TextAlign.center,
                 style: TextStyle(color: context.pal.muted),
               ),
+              if (_query.trim().length >= 3) ...[
+                SizedBox(height: 16),
+                FilledButton.tonalIcon(
+                  onPressed: _alertMe,
+                  icon: Icon(Icons.notifications_active_outlined),
+                  label: Text('Tell me when it\'s listed'),
+                ),
+              ],
             ]),
           ),
         ),

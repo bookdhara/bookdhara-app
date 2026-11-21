@@ -38,10 +38,15 @@ public class BookService {
     private final Clock clock;
 
     private final com.bookdhara.safety.UserBlockRepository blocks;
+    private final com.bookdhara.wishlist.WishlistRepository wishlist;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public BookService(BookRepository books, BookPhotoRepository photos, UserRepository users, Clock clock,
-                       com.bookdhara.safety.UserBlockRepository blocks) {
+                       com.bookdhara.safety.UserBlockRepository blocks, com.bookdhara.wishlist.WishlistRepository wishlist,
+                       org.springframework.context.ApplicationEventPublisher events) {
         this.blocks = blocks;
+        this.wishlist = wishlist;
+        this.events = events;
         this.books = books;
         this.photos = photos;
         this.users = users;
@@ -64,6 +69,7 @@ public class BookService {
         Book book = books.save(new Book(seller, Isbns.normalizeOrNull(r.isbn()), r.title().trim(), trimToNull(r.author()),
                 r.mrp(), r.price(), r.condition(), trimToNull(r.note()), r.city().trim(), r.pincode(),
                 r.allowsPickup(), r.allowsShipping(), r.payout(), clock.instant()));
+        events.publishEvent(new com.bookdhara.wishlist.BookListed(book.getId()));
         return toDetail(book, sellerId);
     }
 
@@ -103,6 +109,14 @@ public class BookService {
     @Transactional(readOnly = true)
     public List<String> cities() {
         return books.findAvailableCities();
+    }
+
+    /** Summaries for these ids, in the same order (missing ids are skipped). */
+    @Transactional(readOnly = true)
+    public List<BookSummary> summariesInOrder(List<Long> ids) {
+        Map<Long, Book> byId = books.findAllById(ids).stream()
+                .collect(Collectors.toMap(Book::getId, java.util.function.Function.identity()));
+        return toSummaries(ids.stream().map(byId::get).filter(java.util.Objects::nonNull).toList());
     }
 
     @Transactional(readOnly = true)
@@ -186,7 +200,7 @@ public class BookService {
         return list.stream().map(b -> {
             List<Long> ids = photoIds.getOrDefault(b.getId(), List.of());
             return new BookSummary(b.getId(), b.getTitle(), b.getAuthor(), b.getPrice(), b.getMrp(), b.getCondition(),
-                    b.getCity(), ids.isEmpty() ? null : photoUrl(ids.get(0)), b.getCreatedAt());
+                    b.getCity(), ids.isEmpty() ? null : photoUrl(ids.get(0)), b.getCreatedAt(), b.getStatus());
         }).toList();
     }
 
@@ -197,7 +211,8 @@ public class BookService {
         return new BookDetail(b.getId(), b.getIsbn(), b.getTitle(), b.getAuthor(), b.getPrice(), b.getMrp(),
                 b.getCondition(), b.getNote(), b.getCity(), b.isAllowsPickup(), b.isAllowsShipping(), b.getStatus(),
                 urls, new SellerInfo(b.getSeller().getId(), b.getSeller().getName()), mine,
-                mine ? b.getPayout() : null, mine ? payoutAmount(b.getPrice(), b.getPayout()) : null, b.getCreatedAt());
+                mine ? b.getPayout() : null, mine ? payoutAmount(b.getPrice(), b.getPayout()) : null, b.getCreatedAt(),
+                !mine && viewerId != null && wishlist.existsByUserIdAndBookId(viewerId, b.getId()));
     }
 
     private Map<Long, List<Long>> photoIdsByBook(Collection<Long> bookIds) {

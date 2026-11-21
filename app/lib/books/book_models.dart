@@ -14,6 +14,7 @@ enum BookCondition {
 
 class BookSummary {
   BookSummary({
+    this.status = 'AVAILABLE',
     required this.id,
     required this.title,
     this.author,
@@ -33,6 +34,7 @@ class BookSummary {
         condition: BookCondition.fromApi(j['condition'] as String),
         city: j['city'] as String,
         coverPhotoUrl: j['coverPhotoUrl'] as String?,
+        status: j['status'] as String? ?? 'AVAILABLE',
       );
 
   final int id;
@@ -43,6 +45,9 @@ class BookSummary {
   final BookCondition condition;
   final String city;
   final String? coverPhotoUrl;
+  final String status;
+
+  bool get isSold => status != 'AVAILABLE';
 }
 
 class BookDetail {
@@ -65,6 +70,7 @@ class BookDetail {
     required this.mine,
     this.payout,
     this.payoutAmount,
+    this.saved = false,
   });
 
   factory BookDetail.fromJson(Map<String, dynamic> j) {
@@ -88,6 +94,7 @@ class BookDetail {
       mine: j['mine'] as bool,
       payout: j['payout'] as String?,
       payoutAmount: (j['payoutAmount'] as num?)?.toInt(),
+      saved: j['saved'] as bool? ?? false,
     );
   }
 
@@ -109,6 +116,10 @@ class BookDetail {
   final bool mine;
   final String? payout;
   final int? payoutAmount;
+  final bool saved;
+
+  /// Link anyone can open; the app jumps straight to this book.
+  String get shareLink => 'https://bookdhara.github.io/bookdhara-app/?book=$id';
 
   bool get isAvailable => status == 'AVAILABLE';
 }

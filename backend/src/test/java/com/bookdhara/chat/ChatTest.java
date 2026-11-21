@@ -58,6 +58,8 @@ class ChatTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        jdbc.update("DELETE FROM wishlist_items");
+        jdbc.update("DELETE FROM book_alerts");
         jdbc.update("DELETE FROM reports");
         jdbc.update("DELETE FROM user_blocks");
         jdbc.update("DELETE FROM credit_entries");
