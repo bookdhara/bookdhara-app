@@ -65,7 +65,7 @@ class _SavedBooksScreenState extends State<SavedBooksScreen> {
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: items.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        separatorBuilder: (context, index) => const Divider(height: 1),
                         itemBuilder: (context, i) {
                           final b = items[i];
                           return ListTile(
