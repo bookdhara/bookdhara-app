@@ -35,8 +35,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (GoogleSignInButton.supported) _loadGoogle();
   }
 
-  /// Shows the Google button only once the server says Google sign-in is set up.
+  /// Shows the Google button right away if we saw it before, then checks with the server
+  /// (which may still be waking up) whether Google sign-in is on.
   Future<void> _loadGoogle() async {
+    final cached = await widget.auth.cachedGoogleClientId();
+    if (cached != null && mounted) setState(() => _googleClientId = cached);
     try {
       final id = await widget.auth.googleClientId();
       if (mounted) setState(() => _googleClientId = id);
