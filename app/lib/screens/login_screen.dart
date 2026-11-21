@@ -35,16 +35,23 @@ class _LoginScreenState extends State<LoginScreen> {
     if (GoogleSignInButton.supported) _loadGoogle();
   }
 
-  /// Shows the Google button right away if we saw it before, then checks with the server
-  /// (which may still be waking up) whether Google sign-in is on.
+  /// The public Google client id baked into the app, so the button never waits for the server
+  /// (which can take a minute to wake up). The server can still switch Google sign-in off.
+  static const _builtInGoogleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+    defaultValue: '833380295837-2agen7raucf5d6mrqu0i88ckc5dllsgh.apps.googleusercontent.com',
+  );
+
+  /// Shows the Google button immediately, then asks the server whether it's still on.
   Future<void> _loadGoogle() async {
     final cached = await widget.auth.cachedGoogleClientId();
-    if (cached != null && mounted) setState(() => _googleClientId = cached);
+    if (!mounted) return;
+    setState(() => _googleClientId = cached ?? _builtInGoogleClientId);
     try {
       final id = await widget.auth.googleClientId();
       if (mounted) setState(() => _googleClientId = id);
     } catch (_) {
-      // No Google button; email login still works.
+      // Server unreachable or still waking: keep the button; signing in will wait for the server.
     }
   }
 

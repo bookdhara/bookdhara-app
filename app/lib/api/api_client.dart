@@ -76,6 +76,11 @@ class ApiClient {
   }
 
   /// Sends a request (built fresh for every try) and retries network errors while the server wakes up.
+  static bool _looksLikeJson(http.Response r) {
+    final type = r.headers['content-type'] ?? '';
+    return type.contains('json');
+  }
+
   Future<Map<String, dynamic>> _execute(http.BaseRequest Function() build) async {
     final deadline = DateTime.now().add(_wakeUpWindow);
     http.Response? response;
@@ -86,7 +91,11 @@ class ApiClient {
         request.headers['Authorization'] = 'Bearer $token';
       }
       try {
-        response = await http.Response.fromStream(await _http.send(request).timeout(_attemptTimeout));
+        final r = await http.Response.fromStream(await _http.send(request).timeout(_attemptTimeout));
+        // While waking up, Render can answer with its own HTML error page (502/503): treat that like
+        // "not reachable yet" and try again instead of failing.
+        if (r.statusCode >= 500 && !_looksLikeJson(r)) throw StateError('server waking up');
+        response = r;
       } catch (_) {
         if (DateTime.now().add(_retryDelay).isAfter(deadline)) {
           throw ApiException(0, 'NETWORK', 'Could not reach BookDhara. Check your internet and try again.');
@@ -95,7 +104,12 @@ class ApiClient {
       }
     }
 
-    final decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+    dynamic decoded;
+    try {
+      decoded = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+    } on FormatException {
+      decoded = <String, dynamic>{};
+    }
     // Lists come back wrapped as {"items": [...]} so every call returns a map.
     final data = decoded is Map<String, dynamic>
         ? decoded
