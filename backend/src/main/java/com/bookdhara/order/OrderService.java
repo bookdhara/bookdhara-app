@@ -1,5 +1,6 @@
 package com.bookdhara.order;
 
+import com.bookdhara.chat.OrderMessageRepository;
 import com.bookdhara.notify.OrderEvent;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -52,10 +53,12 @@ public class OrderService {
     private final WalletService wallet;
     private final Clock clock;
     private final ApplicationEventPublisher events;
+    private final OrderMessageRepository messages;
     private final SecureRandom random = new SecureRandom();
 
     public OrderService(OrderRepository orders, BookRepository books, BookPhotoRepository photos,
-                        UserRepository users, WalletService wallet, Clock clock, ApplicationEventPublisher events) {
+                        UserRepository users, WalletService wallet, Clock clock, ApplicationEventPublisher events,
+                        OrderMessageRepository messages) {
         this.orders = orders;
         this.books = books;
         this.photos = photos;
@@ -63,14 +66,24 @@ public class OrderService {
         this.wallet = wallet;
         this.clock = clock;
         this.events = events;
+        this.messages = messages;
     }
 
-    /** Orders waiting for this person: sellers must hand over or ship, buyers must confirm delivery. */
+    /**
+     * Orders waiting for this person: sellers must hand over or ship, buyers must confirm delivery,
+     * and any open order with chat messages they haven't read.
+     */
     @Transactional(readOnly = true)
     public List<OrderView> needingAttention(Long userId) {
-        List<Order> list = new java.util.ArrayList<>(
-                orders.findBySellerIdAndStatusOrderByCreatedAtDesc(userId, Order.Status.PLACED));
-        list.addAll(orders.findByBuyerIdAndStatusOrderByCreatedAtDesc(userId, Order.Status.SHIPPED));
+        java.util.LinkedHashMap<Long, Order> byId = new java.util.LinkedHashMap<>();
+        orders.findBySellerIdAndStatusOrderByCreatedAtDesc(userId, Order.Status.PLACED).forEach(o -> byId.put(o.getId(), o));
+        orders.findByBuyerIdAndStatusOrderByCreatedAtDesc(userId, Order.Status.SHIPPED).forEach(o -> byId.put(o.getId(), o));
+        java.util.stream.Stream.concat(
+                        orders.findByBuyerIdAndStatusOrderByCreatedAtDesc(userId, Order.Status.PLACED).stream(),
+                        orders.findBySellerIdAndStatusOrderByCreatedAtDesc(userId, Order.Status.SHIPPED).stream())
+                .filter(o -> unread(o, userId) > 0)
+                .forEach(o -> byId.putIfAbsent(o.getId(), o));
+        List<Order> list = List.copyOf(byId.values());
         Map<Long, String> covers = coverUrls(list.stream().map(o -> o.getBook().getId()).toList());
         return list.stream().map(o -> view(o, userId, covers)).toList();
     }
@@ -274,7 +287,12 @@ public class OrderService {
                 o.getPaymentMode().name(),
                 buyer && pickup && o.getStatus() == Order.Status.PLACED ? o.getHandoverCode() : null,
                 buyer ? null : o.getSellerPayout(), buyer ? null : o.getSellerPayoutAmount(),
-                address, o.getTrackingNote(), o.getCancelReason(), actions, o.getCreatedAt(), o.getCompletedAt());
+                address, o.getTrackingNote(), o.getCancelReason(), actions, o.getCreatedAt(), o.getCompletedAt(),
+                unread(o, userId));
+    }
+
+    private long unread(Order o, Long userId) {
+        return messages.countUnread(o.getId(), userId, o.readUptoFor(userId));
     }
 
     private Map<Long, String> coverUrls(List<Long> bookIds) {

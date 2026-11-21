@@ -90,7 +90,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  static String _alertKey(OrderView o) => '${o.id}:${o.status.api}';
+  static String _alertKey(OrderView o) =>
+      '${o.id}:${o.status.api}${o.unreadMessages > 0 ? ':m${o.unreadMessages}' : ''}';
 
   Future<void> _showOrderPopup(List<OrderView> fresh) async {
     final first = fresh.first;
@@ -98,8 +99,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final open = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: Text(first.isBuyer ? '🚚' : '🎉', style: const TextStyle(fontSize: 40)),
-        title: Text(first.isBuyer ? 'Your book is on its way' : 'Your book sold!'),
+        icon: Text(first.unreadMessages > 0 ? '💬' : (first.isBuyer ? '🚚' : '🎉'), style: const TextStyle(fontSize: 40)),
+        title: Text(first.unreadMessages > 0
+            ? 'New message'
+            : (first.isBuyer ? 'Your book is on its way' : 'Your book sold!')),
         content: Text(first.nextStep + (more > 0 ? '\n\n+ $more more ${more == 1 ? 'order needs' : 'orders need'} you.' : '')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Later')),

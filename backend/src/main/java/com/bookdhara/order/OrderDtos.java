@@ -61,6 +61,8 @@ public final class OrderDtos {
             /* Seller only: what they receive. */
             Payout sellerPayout, Integer sellerPayoutAmount,
             Address shippingAddress, String trackingNote, String cancelReason,
-            Actions actions, Instant createdAt, Instant completedAt) {
+            Actions actions, Instant createdAt, Instant completedAt,
+            /* Chat messages from the other person I haven't read yet. */
+            long unreadMessages) {
     }
 }

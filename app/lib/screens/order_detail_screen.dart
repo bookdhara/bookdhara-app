@@ -5,6 +5,7 @@ import '../api/api_client.dart';
 import '../orders/order_models.dart';
 import '../orders/orders_api.dart';
 import '../theme.dart';
+import 'chat_screen.dart';
 import '../widgets/book_cover.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -89,6 +90,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
+  Future<void> _openChat(OrderView o) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => ChatScreen(orders: widget.orders, orderId: o.id, iAmBuyer: o.isBuyer, pickup: o.isPickup),
+    ));
+    _load();
+  }
+
   Widget _body(BuildContext context, OrderView o) {
     final textTheme = Theme.of(context).textTheme;
     return ListView(
@@ -124,6 +132,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ]),
         const SizedBox(height: 20),
         _Steps(order: o),
+        const SizedBox(height: 16),
+        Badge(
+          isLabelVisible: o.unreadMessages > 0,
+          label: Text('${o.unreadMessages}'),
+          alignment: AlignmentDirectional.topEnd,
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _openChat(o),
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: Text(o.isOpen
+                  ? (o.isPickup ? 'Chat with ${o.otherPartyName} to plan the meetup' : 'Chat with ${o.otherPartyName}')
+                  : 'See chat with ${o.otherPartyName}'),
+            ),
+          ),
+        ),
         const SizedBox(height: 20),
 
         // Pickup: the buyer shows the code; the seller types it in.
