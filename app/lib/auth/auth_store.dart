@@ -43,6 +43,7 @@ class AuthStore extends ChangeNotifier {
 
   static const _tokenKey = 'auth_token';
   static const _userKey = 'auth_user';
+  static const _googleClientIdKey = 'google_client_id';
 
   final ApiClient api;
 
@@ -95,10 +96,24 @@ class AuthStore extends ChangeNotifier {
   }
 
   /// The Google sign-in client id, or null while Google sign-in isn't set up on the server.
+  /// Asks the server (which may be waking up, so this can take a minute) and remembers the answer.
   Future<String?> googleClientId() async {
     final data = await api.get('/api/auth/providers');
-    final id = data['googleClientId'] as String?;
-    return (id == null || id.isEmpty) ? null : id;
+    final raw = data['googleClientId'] as String?;
+    final id = (raw == null || raw.isEmpty) ? null : raw;
+    final prefs = await SharedPreferences.getInstance();
+    if (id == null) {
+      await prefs.remove(_googleClientIdKey);
+    } else {
+      await prefs.setString(_googleClientIdKey, id);
+    }
+    return id;
+  }
+
+  /// The client id saved last time, so the Google button shows instantly, before the server wakes.
+  Future<String?> cachedGoogleClientId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_googleClientIdKey);
   }
 
   /// [credential] is the ID token Google's button hands us; the server checks it with Google.
