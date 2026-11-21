@@ -45,5 +45,12 @@ class OrdersApi {
   Future<OrderView> cancel(int id, String? reason) async =>
       OrderView.fromJson(await api.post('/api/orders/$id/cancel', {'reason': reason}));
 
+  /// Chat messages after [after] (0 = all). Reading marks them as seen.
+  Future<ChatView> chat(int orderId, {int after = 0}) async =>
+      ChatView.fromJson(await api.get('/api/orders/$orderId/messages?after=$after'));
+
+  Future<ChatMessage> sendMessage(int orderId, String body) async =>
+      ChatMessage.fromJson(await api.post('/api/orders/$orderId/messages', {'body': body}));
+
   Future<Wallet> wallet() async => Wallet.fromJson(await api.get('/api/wallet'));
 }

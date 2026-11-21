@@ -15,6 +15,8 @@ public record OrderEvent(Type type, long orderId, String toEmail, String toName,
         /** To the seller: the sale is complete and they are paid. */
         COMPLETED,
         /** To whoever didn't cancel. */
-        CANCELLED
+        CANCELLED,
+        /** A chat message arrived (at most one email per half hour; note = the message). */
+        MESSAGE
     }
 }

@@ -65,6 +65,11 @@ public class OrderEmails {
                     "Order cancelled",
                     "The order for \"" + title + "\" was cancelled by " + other + "."
                             + (e.note() == null || e.note().isBlank() ? "" : " Reason: " + oneLine(e.note()) + "."));
+            case MESSAGE -> new Message(
+                    "💬 " + other + " sent you a message about " + title,
+                    "New message",
+                    other + " wrote about \"" + title + "\": \"" + oneLine(e.note()) + "\" "
+                            + "Reply in BookDhara: Profile > My orders, open the order, then Chat.");
         };
     }
 

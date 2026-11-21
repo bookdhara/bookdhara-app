@@ -112,6 +112,18 @@ public class Order {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @Column(name = "buyer_read_upto", nullable = false)
+    private long buyerReadUpto;
+
+    @Column(name = "seller_read_upto", nullable = false)
+    private long sellerReadUpto;
+
+    @Column(name = "buyer_chat_emailed_at")
+    private Instant buyerChatEmailedAt;
+
+    @Column(name = "seller_chat_emailed_at")
+    private Instant sellerChatEmailedAt;
+
     protected Order() {
         // for JPA
     }
@@ -164,6 +176,29 @@ public class Order {
 
     public boolean isOpen() {
         return status == Status.PLACED || status == Status.SHIPPED;
+    }
+
+    public boolean isBuyer(Long userId) { return buyer.getId().equals(userId); }
+
+    /** Id of the last chat message this person has seen. */
+    public long readUptoFor(Long userId) { return isBuyer(userId) ? buyerReadUpto : sellerReadUpto; }
+
+    public void markReadUpto(Long userId, long messageId) {
+        if (isBuyer(userId)) {
+            buyerReadUpto = Math.max(buyerReadUpto, messageId);
+        } else {
+            sellerReadUpto = Math.max(sellerReadUpto, messageId);
+        }
+    }
+
+    public Instant chatEmailedAtFor(Long userId) { return isBuyer(userId) ? buyerChatEmailedAt : sellerChatEmailedAt; }
+
+    public void markChatEmailed(Long userId, Instant at) {
+        if (isBuyer(userId)) {
+            buyerChatEmailedAt = at;
+        } else {
+            sellerChatEmailedAt = at;
+        }
     }
 
     public Long getId() { return id; }

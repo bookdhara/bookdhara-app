@@ -82,10 +82,12 @@ class OrderView {
         canConfirmReceived = (j['actions'] as Map<String, dynamic>)['canConfirmReceived'] as bool,
         canEnterHandoverCode = (j['actions'] as Map<String, dynamic>)['canEnterHandoverCode'] as bool,
         canCancel = (j['actions'] as Map<String, dynamic>)['canCancel'] as bool,
-        createdAt = DateTime.parse(j['createdAt'] as String).toLocal();
+        createdAt = DateTime.parse(j['createdAt'] as String).toLocal(),
+        unreadMessages = (j['unreadMessages'] as num?)?.toInt() ?? 0;
 
   final int id;
   final OrderStatus status;
+  final int unreadMessages;
   final bool isPickup;
   final bool isBuyer;
   final int bookId;
@@ -114,7 +116,12 @@ class OrderView {
   final DateTime createdAt;
 
   /// One line for alerts: what I need to do next on this order.
+  bool get isOpen => status == OrderStatus.placed || status == OrderStatus.shipped;
+
   String get nextStep {
+    if (unreadMessages > 0) {
+      return '$otherPartyName sent you ${unreadMessages == 1 ? 'a message' : '$unreadMessages messages'} about "$bookTitle".';
+    }
     if (isBuyer) return '"$bookTitle" is on its way. Confirm when it arrives.';
     if (isPickup) return '${buyerName ?? 'Someone'} bought "$bookTitle". Meet up and enter their 4-digit code.';
     return '${buyerName ?? 'Someone'} bought "$bookTitle". Ship it and tap "Mark as shipped".';
@@ -153,4 +160,33 @@ class Wallet {
 String shortDate(DateTime d) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return '${d.day} ${months[d.month - 1]}';
+}
+
+
+class ChatMessage {
+  ChatMessage.fromJson(Map<String, dynamic> j)
+      : id = (j['id'] as num).toInt(),
+        mine = j['mine'] as bool,
+        body = j['body'] as String,
+        createdAt = DateTime.parse(j['createdAt'] as String).toLocal();
+
+  final int id;
+  final bool mine;
+  final String body;
+  final DateTime createdAt;
+}
+
+class ChatView {
+  ChatView.fromJson(Map<String, dynamic> j)
+      : otherName = j['otherName'] as String?,
+        bookTitle = j['bookTitle'] as String,
+        canSend = j['canSend'] as bool,
+        messages = (j['messages'] as List<dynamic>)
+            .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+  final String? otherName;
+  final String bookTitle;
+  final bool canSend;
+  final List<ChatMessage> messages;
 }
