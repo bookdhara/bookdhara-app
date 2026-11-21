@@ -158,6 +158,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 maxLength: 4,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 textAlign: TextAlign.center,
+                // Rebuild so Confirm turns on as soon as 4 digits are typed.
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (_) {
+                  if (!_busy && _code.text.length == 4) {
+                    _run(() => widget.orders.handover(o.id, _code.text), 'Done! The sale is complete.');
+                  }
+                },
                 style: const TextStyle(fontSize: 22, letterSpacing: 10, fontWeight: FontWeight.w700),
                 decoration: const InputDecoration(counterText: '', hintText: '----'),
               ),
