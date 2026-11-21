@@ -113,6 +113,13 @@ class OrderView {
   final bool canCancel;
   final DateTime createdAt;
 
+  /// One line for alerts: what I need to do next on this order.
+  String get nextStep {
+    if (isBuyer) return '"$bookTitle" is on its way. Confirm when it arrives.';
+    if (isPickup) return '${buyerName ?? 'Someone'} bought "$bookTitle". Meet up and enter their 4-digit code.';
+    return '${buyerName ?? 'Someone'} bought "$bookTitle". Ship it and tap "Mark as shipped".';
+  }
+
   String get otherPartyName => (isBuyer ? sellerName : buyerName) ?? 'a reader';
 }
 

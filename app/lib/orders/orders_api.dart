@@ -25,6 +25,12 @@ class OrdersApi {
     return items.map((e) => OrderView.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// Orders waiting for me: hand over / ship as a seller, confirm delivery as a buyer.
+  Future<List<OrderView>> attention() async {
+    final items = await api.getList('/api/orders/attention');
+    return items.map((e) => OrderView.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   Future<OrderView> get(int id) async => OrderView.fromJson(await api.get('/api/orders/$id'));
 
   Future<OrderView> ship(int id, String? note) async =>
