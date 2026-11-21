@@ -5,17 +5,27 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../orders/order_models.dart';
 import '../orders/orders_api.dart';
+import '../safety/safety_actions.dart';
+import '../safety/safety_api.dart';
 import '../theme.dart';
 
 /// Chat between the buyer and seller of one order: agree where and when to meet without sharing
 /// phone numbers. New messages are fetched every few seconds while this screen is open.
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required this.orders, required this.orderId, required this.iAmBuyer, required this.pickup});
+  const ChatScreen({
+    super.key,
+    required this.orders,
+    required this.orderId,
+    required this.iAmBuyer,
+    required this.pickup,
+    this.otherUserId,
+  });
 
   final OrdersApi orders;
   final int orderId;
   final bool iAmBuyer;
   final bool pickup;
+  final int? otherUserId;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -117,6 +127,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final showPhoneHint = _phoneLike.hasMatch(_text.text);
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          if (widget.otherUserId != null)
+            SafetyMenu(
+              safety: SafetyApi(widget.orders.api),
+              userId: widget.otherUserId!,
+              userName: _otherName ?? 'this person',
+              onBlocked: () => setState(() => _canSend = false),
+            ),
+        ],
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(_otherName ?? 'Chat'),
           if (_bookTitle != null)

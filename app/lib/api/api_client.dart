@@ -41,6 +41,8 @@ class ApiClient {
 
   Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
 
+  Future<Map<String, dynamic>> put(String path, [Map<String, dynamic>? body]) => _send('PUT', path, body);
+
   Future<List<dynamic>> getList(String path) async {
     final data = await _send('GET', path);
     return data['items'] as List<dynamic>? ?? const [];

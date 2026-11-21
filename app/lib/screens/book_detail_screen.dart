@@ -4,6 +4,8 @@ import '../api/api_client.dart';
 import '../books/book_models.dart';
 import '../books/books_api.dart';
 import '../orders/orders_api.dart';
+import '../safety/safety_actions.dart';
+import '../safety/safety_api.dart';
 import '../theme.dart';
 import '../widgets/book_cover.dart';
 import 'checkout_screen.dart';
@@ -63,7 +65,19 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   Widget build(BuildContext context) {
     final book = _book;
     return Scaffold(
-      appBar: AppBar(title: Text(book?.title ?? '')),
+      appBar: AppBar(
+        title: Text(book?.title ?? ''),
+        actions: [
+          if (book != null && !book.mine)
+            SafetyMenu(
+              safety: SafetyApi(widget.books.api),
+              userId: book.sellerId,
+              userName: book.sellerName ?? 'seller',
+              bookId: book.id,
+              onBlocked: () => Navigator.of(context).pop(true),
+            ),
+        ],
+      ),
       body: _error != null
           ? Center(child: Padding(padding: EdgeInsets.all(24), child: Text(_error!)))
           : book == null

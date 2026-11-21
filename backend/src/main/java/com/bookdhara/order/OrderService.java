@@ -291,7 +291,7 @@ public class OrderService {
                 buyer && pickup && o.getStatus() == Order.Status.PLACED ? o.getHandoverCode() : null,
                 buyer ? null : o.getSellerPayout(), buyer ? null : o.getSellerPayoutAmount(),
                 address, o.getTrackingNote(), o.getCancelReason(), actions, o.getCreatedAt(), o.getCompletedAt(),
-                unread(o, userId));
+                unread(o, userId), buyer ? o.getSeller().getId() : o.getBuyer().getId());
     }
 
     private long unread(Order o, Long userId) {

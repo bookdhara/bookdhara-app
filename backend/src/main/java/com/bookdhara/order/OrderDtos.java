@@ -63,6 +63,8 @@ public final class OrderDtos {
             Address shippingAddress, String trackingNote, String cancelReason,
             Actions actions, Instant createdAt, Instant completedAt,
             /* Chat messages from the other person I haven't read yet. */
-            long unreadMessages) {
+            long unreadMessages,
+            /* The other person's id, for "Report" and "Block". */
+            Long otherUserId) {
     }
 }
