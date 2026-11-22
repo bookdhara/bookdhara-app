@@ -45,6 +45,9 @@ public class User {
     @Column(name = "google_sub", unique = true, length = 255)
     private String googleSub;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     protected User() {
         // for JPA
     }
@@ -109,6 +112,22 @@ public class User {
             lockedUntil = now.plus(lockFor);
             failedLogins = 0;
         }
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    /** Removes everything personal. The row stays so the other side's order history still works. */
+    public void deleteAccount(Instant now) {
+        this.email = null;
+        this.phone = null;
+        this.name = "Deleted user";
+        this.passwordHash = null;
+        this.googleSub = null;
+        this.failedLogins = 0;
+        this.lockedUntil = null;
+        this.deletedAt = now;
     }
 
     public String getGoogleSub() {

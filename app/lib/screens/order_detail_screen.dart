@@ -6,6 +6,8 @@ import '../orders/order_models.dart';
 import '../orders/orders_api.dart';
 import '../theme.dart';
 import 'chat_screen.dart';
+import '../safety/safety_actions.dart';
+import '../safety/safety_api.dart';
 import '../widgets/book_cover.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -81,7 +83,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Widget build(BuildContext context) {
     final o = _order;
     return Scaffold(
-      appBar: AppBar(title: Text(o == null ? 'Order' : 'Order #${o.id}')),
+      appBar: AppBar(
+        title: Text(o == null ? 'Order' : 'Order #${o.id}'),
+        actions: [
+          if (o != null && o.otherUserId != null)
+            SafetyMenu(safety: SafetyApi(widget.orders.api), userId: o.otherUserId!, userName: o.otherPartyName),
+        ],
+      ),
       body: _error != null
           ? Center(child: Text(_error!))
           : o == null
@@ -92,7 +100,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Future<void> _openChat(OrderView o) async {
     await Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => ChatScreen(orders: widget.orders, orderId: o.id, iAmBuyer: o.isBuyer, pickup: o.isPickup),
+      builder: (_) => ChatScreen(
+          orders: widget.orders,
+          orderId: o.id,
+          iAmBuyer: o.isBuyer,
+          pickup: o.isPickup,
+          otherUserId: o.otherUserId,
+        ),
     ));
     _load();
   }

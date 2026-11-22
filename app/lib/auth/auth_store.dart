@@ -160,6 +160,12 @@ class AuthStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Permanently deletes the account on the server, then logs out on this device.
+  Future<void> deleteAccount() async {
+    await api.delete('/api/me');
+    await logout();
+  }
+
   Future<void> logout() async {
     await _clear(await SharedPreferences.getInstance());
     notifyListeners();

@@ -11,6 +11,44 @@ import 'info_screens.dart';
 import 'my_listings_screen.dart';
 import 'my_orders_screen.dart';
 import 'wallet_screen.dart';
+import 'blocked_users_screen.dart';
+
+/// Asks twice (typing DELETE) because this can't be undone.
+Future<void> _deleteAccount(BuildContext context, AuthStore auth) async {
+  final typed = TextEditingController();
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setLocal) => AlertDialog(
+        title: const Text('Delete your account?'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('This permanently removes your profile, your listings and photos, and any credits you have. '
+              'Past orders stay for the other person as "Deleted user". You need to finish or cancel open orders first.'),
+          const SizedBox(height: 12),
+          const Text('Type DELETE to confirm:'),
+          TextField(controller: typed, autofocus: true, onChanged: (_) => setLocal(() {})),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: ctx.pal.danger),
+            onPressed: typed.text.trim() == 'DELETE' ? () => Navigator.pop(ctx, true) : null,
+            child: const Text('Delete forever'),
+          ),
+        ],
+      ),
+    ),
+  );
+  typed.dispose();
+  if (ok != true || !context.mounted) return;
+  try {
+    final navigator = Navigator.of(context);
+    await auth.deleteAccount();
+    navigator.popUntil((r) => r.isFirst);
+  } on ApiException catch (e) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+  }
+}
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key, required this.auth, required this.books, required this.settings});
@@ -106,6 +144,14 @@ class ProfileScreen extends StatelessWidget {
                   builder: (_) => _PasswordSheet(auth: auth),
                 ),
               ),
+              ListTile(
+                leading: const Icon(Icons.block),
+                title: const Text('Blocked people'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => BlockedUsersScreen(api: books.api),
+                )),
+              ),
               const SizedBox(height: 8),
               _Section('Appearance'),
               Padding(
@@ -153,6 +199,15 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton(
+                  onPressed: () => _deleteAccount(context, auth),
+                  style: TextButton.styleFrom(foregroundColor: context.pal.muted),
+                  child: const Text('Delete my account'),
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
           ),
         );

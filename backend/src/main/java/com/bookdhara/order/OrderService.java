@@ -54,11 +54,12 @@ public class OrderService {
     private final Clock clock;
     private final ApplicationEventPublisher events;
     private final OrderMessageRepository messages;
+    private final com.bookdhara.safety.BlockService blocks;
     private final SecureRandom random = new SecureRandom();
 
     public OrderService(OrderRepository orders, BookRepository books, BookPhotoRepository photos,
                         UserRepository users, WalletService wallet, Clock clock, ApplicationEventPublisher events,
-                        OrderMessageRepository messages) {
+                        OrderMessageRepository messages, com.bookdhara.safety.BlockService blocks) {
         this.orders = orders;
         this.books = books;
         this.photos = photos;
@@ -67,6 +68,7 @@ public class OrderService {
         this.clock = clock;
         this.events = events;
         this.messages = messages;
+        this.blocks = blocks;
     }
 
     /**
@@ -115,6 +117,7 @@ public class OrderService {
         if (book.getSeller().getId().equals(buyerId)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "OWN_BOOK", "You can't buy your own book.");
         }
+        blocks.requireNotBlocked(buyerId, book.getSeller().getId(), "You can't buy from this seller.");
         if (book.getStatus() != Status.AVAILABLE) {
             throw new ApiException(HttpStatus.CONFLICT, "BOOK_NOT_AVAILABLE", "Sorry, someone else just bought this book.");
         }
@@ -288,7 +291,7 @@ public class OrderService {
                 buyer && pickup && o.getStatus() == Order.Status.PLACED ? o.getHandoverCode() : null,
                 buyer ? null : o.getSellerPayout(), buyer ? null : o.getSellerPayoutAmount(),
                 address, o.getTrackingNote(), o.getCancelReason(), actions, o.getCreatedAt(), o.getCompletedAt(),
-                unread(o, userId));
+                unread(o, userId), buyer ? o.getSeller().getId() : o.getBuyer().getId());
     }
 
     private long unread(Order o, Long userId) {

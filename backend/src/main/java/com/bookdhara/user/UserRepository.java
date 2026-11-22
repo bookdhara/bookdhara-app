@@ -14,6 +14,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByGoogleSub(String googleSub);
 
+    boolean existsByIdAndDeletedAtIsNull(Long id);
+
     boolean existsByPhoneAndIdNot(String phone, Long id);
 
     /** Locks the user row so the same credits can't be spent twice at once. */

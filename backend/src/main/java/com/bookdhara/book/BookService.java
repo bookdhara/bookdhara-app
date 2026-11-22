@@ -37,7 +37,11 @@ public class BookService {
     private final UserRepository users;
     private final Clock clock;
 
-    public BookService(BookRepository books, BookPhotoRepository photos, UserRepository users, Clock clock) {
+    private final com.bookdhara.safety.UserBlockRepository blocks;
+
+    public BookService(BookRepository books, BookPhotoRepository photos, UserRepository users, Clock clock,
+                       com.bookdhara.safety.UserBlockRepository blocks) {
+        this.blocks = blocks;
         this.books = books;
         this.photos = photos;
         this.users = users;
@@ -72,7 +76,8 @@ public class BookService {
 
     @Transactional(readOnly = true)
     public List<BookSummary> browse(Long viewerId, BrowseFilter f, int page) {
-        Specification<Book> spec = BookSpecs.available().and(BookSpecs.notSoldBy(viewerId));
+        Specification<Book> spec = BookSpecs.available().and(BookSpecs.notSoldBy(viewerId))
+                .and(BookSpecs.notBlockedWith(viewerId));
         if (f.q() != null && !f.q().isBlank()) {
             spec = spec.and(BookSpecs.matches(f.q().trim()));
         }
@@ -110,6 +115,9 @@ public class BookService {
         Book book = load(bookId);
         boolean mine = book.getSeller().getId().equals(viewerId);
         if (book.getStatus() == Status.REMOVED && !mine) {
+            throw notFound();
+        }
+        if (!mine && blocks.existsBetween(viewerId, book.getSeller().getId())) {
             throw notFound();
         }
         return toDetail(book, viewerId);

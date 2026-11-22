@@ -44,6 +44,9 @@ bookdhara:
     brevo-api-key: ${BREVO_API_KEY:}
     sender-email: ${BREVO_SENDER_EMAIL:bookdhara.in@gmail.com}
     sender-name: BookDhara
+  admin:
+    # The BookDhara team (comma separated): report alerts go here.
+    emails: ${ADMIN_EMAILS:bookdhara.in@gmail.com}
   google:
     # OAuth "Web application" client id from Google Cloud. Empty = Google sign-in hidden.
     client-id: ${GOOGLE_CLIENT_ID:}

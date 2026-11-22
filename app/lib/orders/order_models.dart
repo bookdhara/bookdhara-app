@@ -83,11 +83,13 @@ class OrderView {
         canEnterHandoverCode = (j['actions'] as Map<String, dynamic>)['canEnterHandoverCode'] as bool,
         canCancel = (j['actions'] as Map<String, dynamic>)['canCancel'] as bool,
         createdAt = DateTime.parse(j['createdAt'] as String).toLocal(),
-        unreadMessages = (j['unreadMessages'] as num?)?.toInt() ?? 0;
+        unreadMessages = (j['unreadMessages'] as num?)?.toInt() ?? 0,
+        otherUserId = (j['otherUserId'] as num?)?.toInt();
 
   final int id;
   final OrderStatus status;
   final int unreadMessages;
+  final int? otherUserId;
   final bool isPickup;
   final bool isBuyer;
   final int bookId;

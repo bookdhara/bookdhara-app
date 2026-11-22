@@ -17,6 +17,20 @@ final class BookSpecs {
         return (root, query, cb) -> cb.notEqual(root.get("seller").get("id"), userId);
     }
 
+    /** Hides sellers I blocked and sellers who blocked me. */
+    static Specification<Book> notBlockedWith(Long viewerId) {
+        return (root, query, cb) -> {
+            var iBlocked = query.subquery(Long.class);
+            var b1 = iBlocked.from(com.bookdhara.safety.UserBlock.class);
+            iBlocked.select(b1.get("blockedId")).where(cb.equal(b1.get("blockerId"), viewerId));
+            var blockedMe = query.subquery(Long.class);
+            var b2 = blockedMe.from(com.bookdhara.safety.UserBlock.class);
+            blockedMe.select(b2.get("blockerId")).where(cb.equal(b2.get("blockedId"), viewerId));
+            var sellerId = root.get("seller").get("id");
+            return cb.and(cb.not(sellerId.in(iBlocked)), cb.not(sellerId.in(blockedMe)));
+        };
+    }
+
     static Specification<Book> matches(String text) {
         String like = "%" + text.toLowerCase() + "%";
         String digits = text.replaceAll("[^0-9Xx]", "");
