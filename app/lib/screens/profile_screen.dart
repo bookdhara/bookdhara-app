@@ -12,6 +12,8 @@ import 'my_listings_screen.dart';
 import 'my_orders_screen.dart';
 import 'wallet_screen.dart';
 import 'blocked_users_screen.dart';
+import 'saved_books_screen.dart';
+import 'book_alerts_screen.dart';
 
 /// Asks twice (typing DELETE) because this can't be undone.
 Future<void> _deleteAccount(BuildContext context, AuthStore auth) async {
@@ -127,6 +129,23 @@ class ProfileScreen extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
                   builder: (_) => WalletScreen(orders: OrdersApi(books.api)),
+                )),
+              ),
+              ListTile(
+                leading: const Icon(Icons.favorite_border),
+                title: const Text('Saved books'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => SavedBooksScreen(books: books),
+                )),
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_none),
+                title: const Text('Book alerts'),
+                subtitle: const Text("Get an email when a book you want is listed"),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => BookAlertsScreen(books: books),
                 )),
               ),
               const SizedBox(height: 8),

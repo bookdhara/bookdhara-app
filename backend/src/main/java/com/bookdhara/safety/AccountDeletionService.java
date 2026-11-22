@@ -34,10 +34,16 @@ public class AccountDeletionService {
     private final OtpCodeRepository otpCodes;
     private final UserBlockRepository blocks;
     private final Clock clock;
+    private final com.bookdhara.wishlist.WishlistRepository wishlist;
+    private final com.bookdhara.wishlist.BookAlertRepository alerts;
 
     public AccountDeletionService(UserRepository users, OrderRepository orders, BookRepository books,
                                   BookPhotoRepository photos, OtpCodeRepository otpCodes,
-                                  UserBlockRepository blocks, Clock clock) {
+                                  UserBlockRepository blocks, Clock clock,
+                                  com.bookdhara.wishlist.WishlistRepository wishlist,
+                                  com.bookdhara.wishlist.BookAlertRepository alerts) {
+        this.wishlist = wishlist;
+        this.alerts = alerts;
         this.users = users;
         this.orders = orders;
         this.books = books;
@@ -65,6 +71,8 @@ public class AccountDeletionService {
             otpCodes.deleteByEmail(user.getEmail());
         }
         blocks.deleteAllFor(userId);
+        wishlist.removeAllFor(userId);
+        alerts.removeAllFor(userId);
         user.deleteAccount(now);
     }
 }

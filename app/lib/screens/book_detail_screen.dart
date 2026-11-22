@@ -8,6 +8,7 @@ import '../safety/safety_actions.dart';
 import '../safety/safety_api.dart';
 import '../theme.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/share_sheet.dart';
 import 'checkout_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
@@ -34,9 +35,37 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   Future<void> _load() async {
     try {
       final book = await widget.books.detail(widget.bookId);
-      if (mounted) setState(() => _book = book);
+      if (mounted) {
+        setState(() {
+          _book = book;
+          _saved = book.saved;
+        });
+      }
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
+    }
+  }
+
+  bool _saved = false;
+
+  Future<void> _toggleSave() async {
+    final was = _saved;
+    setState(() => _saved = !was);
+    try {
+      if (was) {
+        await widget.books.unsave(widget.bookId);
+      } else {
+        await widget.books.save(widget.bookId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Saved. Find it in Profile > Saved books.')),
+          );
+        }
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _saved = was);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -68,6 +97,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       appBar: AppBar(
         title: Text(book?.title ?? ''),
         actions: [
+          if (book != null && !book.mine)
+            IconButton(
+              tooltip: _saved ? 'Saved' : 'Save for later',
+              onPressed: _toggleSave,
+              icon: Icon(_saved ? Icons.favorite : Icons.favorite_border, color: _saved ? context.pal.danger : null),
+            ),
+          if (book != null)
+            IconButton(tooltip: 'Share', onPressed: () => showShareSheet(context, book), icon: const Icon(Icons.share)),
           if (book != null && !book.mine)
             SafetyMenu(
               safety: SafetyApi(widget.books.api),

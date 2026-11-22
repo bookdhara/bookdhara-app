@@ -44,7 +44,7 @@ public final class BookDtos {
 
     public record BookSummary(
             Long id, String title, String author, int price, Integer mrp, Condition condition,
-            String city, String coverPhotoUrl, Instant createdAt) {
+            String city, String coverPhotoUrl, Instant createdAt, Status status) {
     }
 
     public record BookDetail(
@@ -52,7 +52,9 @@ public final class BookDtos {
             String note, String city, boolean allowsPickup, boolean allowsShipping, Status status,
             List<String> photoUrls, SellerInfo seller, boolean mine,
             /* Only for the seller: what they receive when it sells. */
-            Payout payout, Integer payoutAmount, Instant createdAt) {
+            Payout payout, Integer payoutAmount, Instant createdAt,
+            /* Whether the viewer saved this book. */
+            boolean saved) {
     }
 
     public record IsbnInfo(String isbn, String title, String author, String coverUrl) {
