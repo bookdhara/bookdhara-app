@@ -1,0 +1,10 @@
+name: Check server image for Ghostscript (temporary)
+on:
+  push:
+    branches: [debug/ghostscript-check]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          docker run --rm eclipse-temurin:21-jre sh -c 'echo "gs binary: $(command -v gs || echo none)"; (dpkg -l | grep -iE "ghostscript|libgs|imagemagick") || echo "no ghostscript or imagemagick packages"'
